@@ -42,7 +42,8 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                 formatter: function (params: any) {
                     if (params.length > 0) {
                         const p = params[0];
-                        return `${p.name}<br/>预估涨跌: <span style="color:${p.data[1] >= 0 ? '#ef4444' : '#10b981'}">${p.data[1]}%</span>`;
+                        const val = parseFloat(p.value);
+                        return `${p.name}<br/>预估涨跌: <span style="color:${val >= 0 ? '#ef4444' : '#10b981'}">${p.value}%</span>`;
                     }
                     return '';
                 }
