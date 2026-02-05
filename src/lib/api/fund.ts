@@ -50,76 +50,110 @@ export async function fetchFundHoldings(fundCode: string): Promise<FundInfo | nu
     return enqueue(() => _fetchFundInternal(fundCode));
 }
 
-async function _fetchFundInternal(fundCode: string): Promise<FundInfo | null> {
-    // Reset global apidata
-    // @ts-ignore
-    window.apidata = undefined;
-
-    const url = `https://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code=${fundCode}&topline=10&year=&month=&rt=${Date.now()}`;
-
-    try {
-        await loadScript(url);
-
+async function fetchFundName(code: string): Promise<string> {
+    const url = `https://fundgz.1234567.com.cn/js/${code}.js?rt=${Date.now()}`;
+    return new Promise((resolve) => {
+        const callbackName = 'jsonpgz';
         // @ts-ignore
-        const data = window.apidata;
-        if (!data || !data.content) {
-            console.warn(`No data for fund ${fundCode}`);
-            return null;
-        }
-
-        const content = data.content as string;
-
-        // Parse HTML content using DOMParser
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(content, 'text/html');
-
-        const rows = doc.querySelectorAll('tr');
-        const holdings: FundHolding[] = [];
-
-        // Skip header row
-        for (let i = 1; i < rows.length; i++) {
-            const cols = rows[i].querySelectorAll('td');
-            if (cols.length < 3) continue;
-
-            // Eastmoney format changes sometimes, but usually:
-            // Code is in a link <a>code</a>
-            // Name is text
-            // Ratio is text like "5.23%"
-
-            // Try to find code, likely 6 digits
-            const codeText = cols[1]?.textContent?.trim() || "";
-            const nameText = cols[2]?.textContent?.trim() || "";
-            const ratioText = cols[6]?.textContent?.trim() || ""; // Originally idx 6 often
-
-            // Simple validation
-            if (codeText && ratioText.includes('%')) {
-                holdings.push({
-                    code: codeText,
-                    name: nameText,
-                    ratio: parseFloat(ratioText.replace('%', '')) / 100
-                });
+        window[callbackName] = (data: any) => {
+            if (data && data.name) {
+                resolve(data.name);
+            } else {
+                resolve(`基金${code}`);
             }
-        }
-
-        // Since this API doesn't give clean Fund Name, we might need another way or just generic
-        // Actually the page title or content might have it
-        // "<h4>[易方达优质精选混合(QDII)](...)"
-        let fundName = `基金${fundCode}`;
-        const titleHeader = doc.querySelector('h4');
-        if (titleHeader) {
-            // Extract "易方达优质精选..." from "<h4>[Name](link)..."
-            const match = titleHeader.textContent?.match(/\[(.*?)\]/);
-            if (match) fundName = match[1];
-        }
-
-        return {
-            code: fundCode,
-            name: fundName,
-            holdings
         };
 
+        const script = document.createElement('script');
+        script.src = url;
+        script.onerror = () => {
+            resolve(`基金${code}`);
+        };
+        document.body.appendChild(script);
+        // Clean up handled by specific implementation or simple append
+        // For simplicity and since these are small requests, we let them append
+        // But better to remove:
+        script.onload = () => {
+            document.body.removeChild(script);
+        };
+    });
+}
+
+async function _fetchFundInternal(fundCode: string): Promise<FundInfo | null> {
+    // Parallel fetch: Name and Holdings
+    // Note: fundgz also gives realtime estimate, but we calculate it ourselves.
+
+    const namePromise = fetchFundName(fundCode);
+
+    // Reset global apidata for holdings fetch
+    // @ts-ignore
+    window.apidata = undefined;
+    const holdingsUrl = `https://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code=${fundCode}&topline=10&year=&month=&rt=${Date.now()}`;
+
+    // Load holdings script
+    let holdings: FundHolding[] = [];
+    try {
+        await loadScript(holdingsUrl);
+        // @ts-ignore
+        const data = window.apidata;
+        if (data && data.content) {
+            const content = data.content as string;
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(content, 'text/html');
+            // Fix: Only select the first table (latest data) to avoid duplicates from historical tables
+            const firstTable = doc.querySelector('table');
+
+            if (firstTable) {
+                const rows = firstTable.querySelectorAll('tr');
+
+                for (let i = 1; i < rows.length; i++) {
+                    const cols = rows[i].querySelectorAll('td');
+                    if (cols.length < 3) continue;
+
+                    // Eastmoney Format:
+                    // Col 1: Code (in <a>)
+                    // Col 2: Name (text)
+                    // Col 3+: Possible Ratio
+
+                    const codeText = cols[1]?.textContent?.trim() || "";
+                    const nameText = cols[2]?.textContent?.trim() || "";
+
+                    // Ratio usually at index 6 or last. 
+                    // Let's iterate to find '%'
+                    let ratioText = "";
+                    for (let j = 3; j < cols.length; j++) {
+                        if (cols[j].textContent?.includes('%')) {
+                            ratioText = cols[j].textContent || "";
+                            break;
+                        }
+                    }
+
+                    if (codeText && ratioText.includes('%')) {
+                        const ratioVal = parseFloat(ratioText.replace('%', ''));
+                        if (!isNaN(ratioVal)) {
+                            holdings.push({
+                                code: codeText,
+                                name: nameText,
+                                ratio: ratioVal / 100
+                            });
+                        }
+                    }
+                }
+            }
+        }
     } catch (e) {
-        console.error(`Failed to fetch fund ${fundCode}`, e);
+        console.warn("Error fetching holdings", e);
+    }
+
+    const fundName = await namePromise;
+
+    if (holdings.length === 0 && fundName.startsWith("基金")) {
+        // If both failed, return null
         return null;
     }
+
+    return {
+        code: fundCode,
+        name: fundName,
+        holdings
+    };
 }

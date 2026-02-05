@@ -101,22 +101,35 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
 
     // Determine current holdings to display
     const displayHoldings = useMemo(() => {
+        let rawList;
         // If hovering and we have snapshot data
         if (hoveredIndex >= 0 && history[hoveredIndex]?.holdingsSnapshot) {
-            return [...history[hoveredIndex].holdingsSnapshot!].sort((a, b) => b.ratio - a.ratio);
+            rawList = [...history[hoveredIndex].holdingsSnapshot!];
+        } else {
+            // Default: Live data
+            rawList = [...fund.holdings].map(h => {
+                const stock = stockPrices[h.code];
+                return {
+                    code: h.code,
+                    name: h.name,
+                    ratio: h.ratio,
+                    percent: stock ? stock.percent : 0,
+                    price: stock ? stock.price : 0
+                };
+            });
         }
 
-        // Default: Live data
-        return [...fund.holdings].map(h => {
-            const stock = stockPrices[h.code];
-            return {
-                code: h.code,
-                name: h.name,
-                ratio: h.ratio,
-                percent: stock ? stock.percent : 0,
-                price: stock ? stock.price : 0
-            };
-        }).sort((a, b) => b.ratio - a.ratio);
+        // Deduplicate list by code just in case data source has dups
+        const seen = new Set<string>();
+        const uniqueList = [];
+        for (const item of rawList) {
+            if (!seen.has(item.code)) {
+                seen.add(item.code);
+                uniqueList.push(item);
+            }
+        }
+
+        return uniqueList.sort((a, b) => b.ratio - a.ratio);
     }, [fund.holdings, stockPrices, hoveredIndex, history]);
 
     return (

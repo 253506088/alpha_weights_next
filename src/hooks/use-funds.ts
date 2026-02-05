@@ -17,12 +17,49 @@ export function useFunds() {
     const [loading, setLoading] = useState(false);
     const [refreshInterval, setRefreshInterval] = useState(60);
 
+    const updateFundHoldings = async (code: string) => {
+        setLoading(true);
+        try {
+            const info = await fetchFundHoldings(code);
+            if (info) {
+                setFunds(prev => prev.map(f => {
+                    if (f.code === code) {
+                        return {
+                            ...f,
+                            name: info.name,
+                            holdings: info.holdings,
+                            lastUpdate: Date.now()
+                        };
+                    }
+                    return f;
+                }));
+                log("Action", `已更新持仓: ${code}`);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Initial load
     useEffect(() => {
         const loaded = StorageManager.getFunds();
         const config = StorageManager.getConfig();
         setFunds(loaded);
         setRefreshInterval(config.refreshInterval);
+
+        // Auto-update check: if lastUpdate is not today, update it
+        const todayStr = new Date().toDateString();
+        loaded.forEach(f => {
+            const lastUpdateDate = f.lastUpdate ? new Date(f.lastUpdate).toDateString() : "";
+            if (lastUpdateDate !== todayStr) {
+                // Trigger update
+                // We use the function logic but direct call since state might not be ready if we used the wrapper relying on 'funds' state? 
+                // Actually the wrapper uses functional SetState (prev => ...), so it is safe to call even if 'funds' state in this scope is empty?
+                // Yes, functional setState is safe.
+                log("AutoUpdate", `基金 ${f.name} 数据已过期，正在更新...`);
+                updateFundHoldings(f.code);
+            }
+        });
     }, []);
 
     // Save when funds change
@@ -50,7 +87,7 @@ export function useFunds() {
 
         if (allCodes.size === 0) return;
 
-        log("Polling", `Fetching prices for ${allCodes.size} stocks`);
+        log("Polling", `正在获取 ${allCodes.size} 只股票行情`);
         const newPrices = await fetchStocks(Array.from(allCodes));
         setPrices(prev => ({ ...prev, ...newPrices }));
 
@@ -96,7 +133,7 @@ export function useFunds() {
         }
 
         setLoading(true);
-        log("Action", `Adding fund ${code}`);
+        log("Action", `正在添加基金 ${code}`);
         try {
             const info = await fetchFundHoldings(code);
             if (info) {
@@ -107,7 +144,7 @@ export function useFunds() {
                     lastUpdate: Date.now()
                 };
                 setFunds(prev => [...prev, newFund]);
-                log("Action", `Fund added: ${info.name}`);
+                log("Action", `基金添加成功: ${info.name}`);
             } else {
                 alert("获取基金数据失败，请检查代码");
             }
@@ -122,38 +159,17 @@ export function useFunds() {
     const removeFund = (code: string) => {
         if (confirm("确定删除该基金吗？")) {
             setFunds(prev => prev.filter(f => f.code !== code));
-            log("Action", `Removed fund ${code}`);
+            log("Action", `已删除基金 ${code}`);
         }
     };
 
-    const updateFundHoldings = async (code: string) => {
-        setLoading(true);
-        try {
-            const info = await fetchFundHoldings(code);
-            if (info) {
-                setFunds(prev => prev.map(f => {
-                    if (f.code === code) {
-                        return {
-                            ...f,
-                            name: info.name,
-                            holdings: info.holdings,
-                            lastUpdate: Date.now()
-                        };
-                    }
-                    return f;
-                }));
-                log("Action", `Updated holdings for ${code}`);
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
+    // updateFundHoldings moved up
 
     const updateConfig = (newInterval: number) => {
         if (newInterval < 30) newInterval = 30;
         setRefreshInterval(newInterval);
         StorageManager.saveConfig({ refreshInterval: newInterval });
-        log("Config", `Interval set to ${newInterval}s`);
+        log("Config", `刷新间隔已设置为 ${newInterval}秒`);
     };
 
     // Calculate Estimates
