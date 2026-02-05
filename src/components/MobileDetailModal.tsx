@@ -151,7 +151,14 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
         let rawList;
         // If hovering and we have snapshot data
         if (hoveredIndex >= 0 && history[hoveredIndex]?.holdingsSnapshot) {
-            rawList = [...history[hoveredIndex].holdingsSnapshot!];
+            // Restore name from fund.holdings since we don't store it in history anymore
+            rawList = history[hoveredIndex].holdingsSnapshot!.map(s => {
+                const holding = fund.holdings.find(fh => fh.code === s.code);
+                return {
+                    ...s,
+                    name: holding ? holding.name : (s.name || s.code)
+                };
+            });
         } else {
             // Default: Live data
             rawList = [...fund.holdings].map(h => {

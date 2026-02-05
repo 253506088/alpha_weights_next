@@ -18,7 +18,7 @@ export interface FundHistoryItem {
     estimatedChange: number;
     holdingsSnapshot?: {
         code: string;
-        name: string;
+        name?: string; // Optional to save space
         ratio: number;
         percent: number;
         price: number;
@@ -71,26 +71,52 @@ export const StorageManager = {
 
     appendFundHistory: (code: string, estimate: number, holdingsSnapshot?: FundHistoryItem['holdingsSnapshot'], timestamp?: number) => {
         if (typeof window === 'undefined') return;
+
+        const nowMs = timestamp || Date.now();
+        const now = new Date(nowMs);
+        const today = now.toDateString();
+
+        // Get existing history
         const history = StorageManager.getFundHistory(code);
 
-        // Simple deduplication by minute: Check if last item is same minute
-        const now = timestamp ? new Date(timestamp) : new Date();
-        // ... (We could check against last item here to dedupe if needed, but for now simple append)
+        // Filter for today only
+        let cleanHistory = history.filter(h => new Date(h.timestamp).toDateString() === today);
 
-        const today = now.toDateString();
-        const cleanHistory = history.filter(h => new Date(h.timestamp).toDateString() === today);
+        // Check if the last item is from the same minute
+        const lastItem = cleanHistory[cleanHistory.length - 1];
+        const isSameMinute = lastItem &&
+            new Date(lastItem.timestamp).getMinutes() === now.getMinutes() &&
+            new Date(lastItem.timestamp).getHours() === now.getHours();
 
-        // If explicitly setting 11:30 or 15:30, remove any existing entry for that exact minute to avoid duplicates?
-        // Or just append. Chart usually handles it or we filter. 
-        // Let's just append for now.
-
-        cleanHistory.push({
-            timestamp: timestamp || Date.now(),
+        const newItem: FundHistoryItem = {
+            timestamp: nowMs,
             estimatedChange: estimate,
             holdingsSnapshot
-        });
+        };
 
-        localStorage.setItem(KEYS.HISTORY_PREFIX + code, JSON.stringify(cleanHistory));
+        if (isSameMinute) {
+            // Overwrite last item
+            cleanHistory[cleanHistory.length - 1] = newItem;
+        } else {
+            // Append new item
+            cleanHistory.push(newItem);
+        }
+
+        // Limit maximum history points to avoid quota exceeded (e.g. 4 hours * 60 = 240 points ~ 250)
+        // If > 300, start dropping every other point or just tail?
+        // Let's just limit to last 300 points for safety
+        if (cleanHistory.length > 300) {
+            cleanHistory = cleanHistory.slice(cleanHistory.length - 300);
+        }
+
+        try {
+            localStorage.setItem(KEYS.HISTORY_PREFIX + code, JSON.stringify(cleanHistory));
+        } catch (e) {
+            console.error("Quota Exceeded, clearing old history for " + code);
+            // Emergency cleanup: keep only last 50
+            const emergencyHistory = cleanHistory.slice(cleanHistory.length - 50);
+            localStorage.setItem(KEYS.HISTORY_PREFIX + code, JSON.stringify(emergencyHistory));
+        }
     },
 
     // Export / Import

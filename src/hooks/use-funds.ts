@@ -193,7 +193,7 @@ export function useFunds() {
                     weightedChange += stock.percent * h.ratio;
                     snapshot.push({
                         code: h.code,
-                        name: h.name,
+                        // name: h.name, // Removed to save storage space
                         ratio: h.ratio,
                         percent: stock.percent,
                         price: stock.price
