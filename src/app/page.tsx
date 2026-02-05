@@ -5,6 +5,7 @@ import { FundCard } from "@/components/FundCard";
 import { CreateFund } from "@/components/CreateFund";
 import { SettingsModal } from "@/components/SettingsModal";
 import { DetailModal } from "@/components/DetailModal";
+import { InfoModal } from "@/components/InfoModal";
 import { Settings, RefreshCw, Info } from "lucide-react";
 import { useState } from "react";
 
@@ -20,6 +21,7 @@ export default function Home() {
 
   const [selectedFund, setSelectedFund] = useState<FundWithEstimate | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
   // Using specific style for container from legacy: max-width: 1200px
   return (
@@ -30,7 +32,7 @@ export default function Home() {
           <span className="title-text-legacy">
             基金前十重仓股估值看板
           </span>
-          <button className="refresh-btn-legacy" onClick={() => window.open('https://github.com/253506088/alpha_weights', '_blank')}>系统说明</button>
+          <button className="refresh-btn-legacy" onClick={() => setShowInfo(true)}>系统说明</button>
         </h1>
 
         {/* Input & Controls Group - Matching 'input-group' in legacy */}
@@ -81,6 +83,7 @@ export default function Home() {
       {/* Modals */}
       {selectedFund && <DetailModal fund={selectedFund} onClose={() => setSelectedFund(null)} />}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
 
       <footer className="mt-16 text-center text-sm text-sub opacity-80 pb-5">
         <a href="https://github.com/253506088/alpha_weights" target="_blank" className="hover:text-white transition-colors no-underline flex items-center justify-center gap-2" style={{ color: 'var(--text-sub)' }}>

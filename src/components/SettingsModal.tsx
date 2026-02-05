@@ -11,7 +11,14 @@ interface SettingsModalProps {
 
 export function SettingsModal({ onClose }: SettingsModalProps) {
     const { refreshInterval, updateConfig } = useFunds();
+    const [savedMsg, setSavedMsg] = useState("");
     const [importStr, setImportStr] = useState("");
+
+    const handleConfigChange = (val: number) => {
+        updateConfig(val);
+        setSavedMsg("已保存");
+        setTimeout(() => setSavedMsg(""), 2000);
+    };
     const [exportStr, setExportStr] = useState("");
 
     const handleExport = () => {
@@ -33,44 +40,65 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="glass-card w-full max-w-md rounded-xl p-6 relative animate-in fade-in zoom-in duration-200">
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 text-slate-400 hover:text-white"
-                >
-                    <X className="w-5 h-5" />
-                </button>
+        <div className="modal-overlay active" onClick={(e) => {
+            if (e.target === e.currentTarget) onClose();
+        }}>
+            <div className="modal modal-legacy" style={{ maxWidth: '450px' }}>
+                <div className="close-btn" onClick={onClose}>&times;</div>
+                <h3 style={{ marginBottom: '25px' }}>系统设置</h3>
 
-                <h2 className="text-xl font-bold mb-6 text-slate-100">系统设置</h2>
+                <div className="modal-body" style={{ display: 'block', padding: '0 10px' }}>
 
-                <div className="space-y-6">
                     {/* Refresh Interval */}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-400 mb-2">
+                    <div style={{ marginBottom: '25px' }}>
+                        <label style={{ display: 'block', color: 'var(--text-sub)', marginBottom: '10px', fontSize: '14px' }}>
                             自动刷新间隔 (秒)
                         </label>
-                        <input
-                            type="number"
-                            min="30"
-                            value={refreshInterval}
-                            onChange={(e) => updateConfig(parseInt(e.target.value) || 30)}
-                            className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p className="text-xs text-slate-500 mt-1">最小 30 秒</p>
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type="number"
+                                min="30"
+                                value={refreshInterval}
+                                onChange={(e) => handleConfigChange(parseInt(e.target.value) || 30)}
+                                style={{
+                                    width: '100%',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    padding: '10px',
+                                    color: '#fff',
+                                    borderRadius: '6px',
+                                    outline: 'none'
+                                }}
+                            />
+                            {savedMsg && (
+                                <span style={{
+                                    position: 'absolute',
+                                    right: '10px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    color: '#10b981',
+                                    fontSize: '12px',
+                                    fontWeight: 500
+                                }}>
+                                    ✓ {savedMsg}
+                                </span>
+                            )}
+                        </div>
+                        <p style={{ fontSize: '12px', color: 'var(--text-sub)', marginTop: '8px', opacity: 0.7 }}>最小 30 秒</p>
                     </div>
 
-                    <hr className="border-slate-700/50" />
+                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '20px 0' }}></div>
 
                     {/* Export */}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-400 mb-2">
+                    <div style={{ marginBottom: '25px' }}>
+                        <label style={{ display: 'block', color: 'var(--text-sub)', marginBottom: '10px', fontSize: '14px' }}>
                             导出配置
                         </label>
-                        <div className="flex gap-2">
+                        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
                             <button
                                 onClick={handleExport}
-                                className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-slate-200"
+                                className="refresh-btn-legacy"
+                                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontSize: '13px' }}
                             >
                                 <Download className="w-4 h-4" />
                                 生成配置码
@@ -78,7 +106,8 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                             {exportStr && (
                                 <button
                                     onClick={() => navigator.clipboard.writeText(exportStr)}
-                                    className="flex items-center gap-2 px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg text-sm"
+                                    className="refresh-btn-legacy"
+                                    style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px' }}
                                 >
                                     <Copy className="w-4 h-4" />
                                     复制
@@ -89,30 +118,62 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                             <textarea
                                 readOnly
                                 value={exportStr}
-                                className="mt-2 w-full h-20 bg-slate-950/50 border border-slate-700 rounded-lg p-2 text-xs text-slate-400 font-mono resize-none outline-none"
+                                style={{
+                                    width: '100%',
+                                    height: '80px',
+                                    background: 'rgba(0,0,0,0.3)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '6px',
+                                    padding: '10px',
+                                    color: 'var(--text-sub)',
+                                    fontSize: '12px',
+                                    fontFamily: 'monospace',
+                                    resize: 'none',
+                                    outline: 'none'
+                                }}
                             />
                         )}
                     </div>
 
-                    <hr className="border-slate-700/50" />
+                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '20px 0' }}></div>
 
                     {/* Import */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-400 mb-2">
+                        <label style={{ display: 'block', color: 'var(--text-sub)', marginBottom: '10px', fontSize: '14px' }}>
                             导入配置
                         </label>
                         <textarea
                             value={importStr}
                             onChange={(e) => setImportStr(e.target.value)}
                             placeholder="在此粘贴配置码..."
-                            className="w-full h-20 bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white font-mono resize-none outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                            style={{
+                                width: '100%',
+                                height: '80px',
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '6px',
+                                padding: '10px',
+                                color: '#fff',
+                                fontSize: '12px',
+                                fontFamily: 'monospace',
+                                resize: 'none',
+                                outline: 'none',
+                                marginBottom: '15px'
+                            }}
                         />
                         <button
                             onClick={handleImport}
                             disabled={!importStr}
-                            className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+                            className="refresh-btn-legacy"
+                            style={{
+                                width: '100%',
+                                background: importStr ? '#3b82f6' : 'rgba(255,255,255,0.1)',
+                                border: 'none',
+                                color: importStr ? '#fff' : 'rgba(255,255,255,0.3)',
+                                cursor: importStr ? 'pointer' : 'not-allowed'
+                            }}
                         >
-                            <Upload className="w-4 h-4" />
+                            <Upload className="w-4 h-4 inline-block mr-2" />
                             导入并重启
                         </button>
                     </div>
