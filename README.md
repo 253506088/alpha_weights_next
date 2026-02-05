@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AlphaWeights Next
 
-## Getting Started
+A client-side fund valuation dashboard, migrated to Next.js.
 
-First, run the development server:
+## Key Features
+- **Client-Side Data Fetching**: Bypasses CORS using JSONP to fetch data directly from Eastmoney and Sina Finance.
+- **LocalStorage**: All data (Fund list, Holdings, History, Config) is stored locally.
+- **Starry Theme**: Premium aesthetics.
+- **Responsive**: Mobile-first design.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Installation & Dev
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. Run local dev server:
+   ```bash
+   npm run dev
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Build for Production:
+   ```bash
+   npm run build
+   ```
 
-## Learn More
+## Deployment (GitHub Pages)
 
-To learn more about Next.js, take a look at the following resources:
+This project is a static site (SPA). To deploy to GitHub Pages:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Update `next.config.mjs` to enable static export:
+   ```js
+   /** @type {import('next').NextConfig} */
+   const nextConfig = {
+     output: 'export',
+     images: { unoptimized: true }
+   };
+   export default nextConfig;
+   ```
+2. Run `npm run build`.
+3. The `out/` directory contains the static files. Upload these to your `gh-pages` branch.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Usage
+1. Open the page.
+2. Enter a fund code (e.g. `000478`) and click Add.
+3. The card updates automatically every minute (default).
+4. Click a card to view intraday chart.
+5. Click Settings to export/import your list.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

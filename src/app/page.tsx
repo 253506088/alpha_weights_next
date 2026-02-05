@@ -1,65 +1,92 @@
-import Image from "next/image";
+"use client";
+
+import { useFunds, FundWithEstimate } from "@/hooks/use-funds";
+import { FundCard } from "@/components/FundCard";
+import { CreateFund } from "@/components/CreateFund";
+import { SettingsModal } from "@/components/SettingsModal";
+import { DetailModal } from "@/components/DetailModal";
+import { Settings, RefreshCw, Info } from "lucide-react";
+import { useState } from "react";
 
 export default function Home() {
+  const {
+    funds,
+    loading,
+    addFund,
+    removeFund,
+    updateFundHoldings,
+    forceRefresh
+  } = useFunds();
+
+  const [selectedFund, setSelectedFund] = useState<FundWithEstimate | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // Using specific style for container from legacy: max-width: 1200px
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="min-h-screen px-5 py-10 mx-auto max-w-[1200px] pb-20">
+      {/* Header */}
+      <header className="flex flex-col gap-6 mb-12 items-center text-center">
+        <h1 className="flex items-center gap-[50px] m-0">
+          <span className="title-text-legacy">
+            基金前十重仓股估值看板
+          </span>
+          <button className="refresh-btn-legacy" onClick={() => window.open('https://github.com/253506088/alpha_weights', '_blank')}>系统说明</button>
+        </h1>
+
+        {/* Input & Controls Group - Matching 'input-group' in legacy */}
+        <div className="input-group-legacy">
+          <button
+            onClick={forceRefresh}
+            className="refresh-btn-legacy"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            刷新列表
+          </button>
+          <button
+            onClick={forceRefresh}
+            className="refresh-btn-legacy"
+          >
+            立即计算
+          </button>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="refresh-btn-legacy"
+          >
+            设置
+          </button>
+
+          <CreateFund onAdd={addFund} loading={loading} />
+        </div>
+      </header>
+
+      {/* Grid */}
+      {funds.length === 0 ? (
+        <div className="text-center py-20 text-slate-600">
+          <Info className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p>暂无基金，请添加代码开始监控</p>
+        </div>
+      ) : (
+        <div className="fund-grid">
+          {funds.map(fund => (
+            <FundCard
+              key={fund.code}
+              fund={fund}
+              onRemove={removeFund}
+              onUpdate={updateFundHoldings}
+              onClick={setSelectedFund}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          ))}
         </div>
-      </main>
-    </div>
+      )}
+
+      {/* Modals */}
+      {selectedFund && <DetailModal fund={selectedFund} onClose={() => setSelectedFund(null)} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+
+      <footer className="mt-16 text-center text-sm text-sub opacity-80 pb-5">
+        <a href="https://github.com/253506088/alpha_weights" target="_blank" className="hover:text-white transition-colors no-underline flex items-center justify-center gap-2" style={{ color: 'var(--text-sub)' }}>
+          GitHub
+        </a>
+      </footer>
+    </main>
   );
 }
