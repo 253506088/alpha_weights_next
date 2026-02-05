@@ -46,21 +46,24 @@ export function FundCard({ fund, onRemove, onUpdate, onClick }: FundCardProps) {
                     &times;
                 </button>
             </div>
+            {/* 主体区域：左侧净值信息，右侧预估涨跌幅 */}
+            <div className="card-body">
+                {/* 左侧：净值信息两行 */}
+                {fund.dwjz && (
+                    <div className="nav-info-left">
+                        <div className="nav-row">昨日净值: {fund.dwjz.toFixed(4)}</div>
+                        <div className={`nav-row ${isUp ? 'up' : isDown ? 'down' : 'neutral'}`}>
+                            预估净值: {fund.estimatedNav?.toFixed(4) || '--'}
+                        </div>
+                    </div>
+                )}
 
-            <div className={`value ${isUp ? 'up' : isDown ? 'down' : 'neutral'}`}>
-                {percentStr}%
-                <small>预估</small>
-            </div>
-
-            {/* 净值信息 */}
-            {fund.dwjz && (
-                <div className="nav-info">
-                    <span>昨日净值: {fund.dwjz.toFixed(4)}</span>
-                    <span className={isUp ? 'up' : isDown ? 'down' : 'neutral'}>
-                        预估净值: {fund.estimatedNav?.toFixed(4) || '--'}
-                    </span>
+                {/* 右侧：预估涨跌幅 */}
+                <div className={`value ${isUp ? 'up' : isDown ? 'down' : 'neutral'}`}>
+                    {percentStr}%
+                    <small>预估</small>
                 </div>
-            )}
+            </div>
 
             <div className="card-footer">
                 <div className="total-ratio" title="前十持仓占比">
