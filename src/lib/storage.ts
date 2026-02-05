@@ -6,6 +6,7 @@ export interface StoredFund {
     holdings: FundHolding[];
     lastUpdate: number; // timestamp
     dwjz?: number; // 昨日净值
+    stockRatio?: number; // 股票仓位 (0-100)，默认 95
 }
 
 export interface AppConfig {

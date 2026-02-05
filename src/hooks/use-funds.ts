@@ -10,6 +10,8 @@ export interface FundWithEstimate extends StoredFund {
     estimate: number;
     lastPriceTime: string;
     estimatedNav?: number; // 预估净值 = dwjz * (1 + estimate/100)
+    correction: number; // 修正涨跌幅
+    correctionNav?: number; // 修正预估净值
 }
 
 export function useFunds() {
@@ -30,6 +32,7 @@ export function useFunds() {
                             name: info.name,
                             holdings: info.holdings,
                             dwjz: info.dwjz ?? f.dwjz,
+                            stockRatio: info.stockRatio, // Update Stock Ratio
                             lastUpdate: Date.now()
                         };
                     }
@@ -50,15 +53,46 @@ export function useFunds() {
         setRefreshInterval(config.refreshInterval);
 
         // Auto-update check: if lastUpdate is not today, update it
-        const todayStr = new Date().toDateString();
-        loaded.forEach(f => {
-            const lastUpdateDate = f.lastUpdate ? new Date(f.lastUpdate).toDateString() : "";
-            if (lastUpdateDate !== todayStr) {
-                log("AutoUpdate", `基金 ${f.name} 数据已过期，正在更新...`);
-                updateFundHoldings(f.code);
-            }
-        });
+        checkDailyRefresh(loaded);
     }, []);
+
+    const checkDailyRefresh = async (currentFunds: StoredFund[]) => {
+        const now = new Date();
+        const hour = now.getHours();
+        const todayStr = now.toDateString();
+
+        // Check if it's past 9:00 AM
+        if (hour >= 9) {
+            let needsRefresh = false;
+            for (const f of currentFunds) {
+                const lastUpdateDate = f.lastUpdate ? new Date(f.lastUpdate).toDateString() : "";
+                if (lastUpdateDate !== todayStr) {
+                    needsRefresh = true;
+                    log("AutoUpdate", `基金 ${f.name} 数据已过期 (${lastUpdateDate} vs ${todayStr})，正在更新...`);
+                }
+            }
+
+            if (needsRefresh) {
+                // Refresh all one by one (or could be parallel but let's be safe)
+                // We reuse updateFundHoldings but calling it in loop might trigger multiple state updates
+                // Better to simple iterate and update.
+                for (const f of currentFunds) {
+                    const lastUpdateDate = f.lastUpdate ? new Date(f.lastUpdate).toDateString() : "";
+                    if (lastUpdateDate !== todayStr) {
+                        await updateFundHoldings(f.code);
+                    }
+                }
+            }
+        }
+    };
+
+    // Periodic daily check (every minute)
+    useEffect(() => {
+        const timer = setInterval(() => {
+            checkDailyRefresh(funds);
+        }, 60 * 1000);
+        return () => clearInterval(timer);
+    }, [funds]);
 
     // Save when funds change
     useEffect(() => {
@@ -185,6 +219,7 @@ export function useFunds() {
                     name: info.name,
                     holdings: info.holdings,
                     dwjz: info.dwjz,
+                    stockRatio: info.stockRatio, // Add stock ratio
                     lastUpdate: Date.now()
                 };
                 setFunds(prev => [...prev, newFund]);
@@ -214,6 +249,15 @@ export function useFunds() {
         log("Config", `刷新间隔已设置为 ${newInterval}秒`);
     };
 
+    const updateStockRatio = (code: string, ratio: number) => {
+        setFunds(prev => {
+            const newFunds = prev.map(f => f.code === code ? { ...f, stockRatio: ratio } : f);
+            StorageManager.saveFunds(newFunds);
+            return newFunds;
+        });
+        log("Action", `已修改基金 ${code} 仓位为 ${ratio}%`);
+    };
+
     // Calculate Estimates
     const fundsWithEstimates: FundWithEstimate[] = funds.map(f => {
         let weightedChange = 0;
@@ -227,15 +271,41 @@ export function useFunds() {
             totalRatio += h.ratio;
         });
 
-        // 计算预估净值
+        // 预估净值 (Original)
         const estimatedNav = f.dwjz && f.dwjz > 0
             ? f.dwjz * (1 + weightedChange / 100)
+            : undefined;
+
+        // 修正估值 Calculation
+        // Formula: (Estimate / Top10Ratio) * StockRatio
+        let correction = 0;
+        if (totalRatio > 0) {
+            // Average change of the top 10 holdings
+            const avgChange = weightedChange / totalRatio;
+
+            // Apply stock position ratio (default 95% if missing)
+            // f.stockRatio is e.g. 95 (meaning 95%) or 84.42
+            // If user hasn't set it, default to 95
+            const ratio = (f.stockRatio !== undefined && f.stockRatio !== null) ? f.stockRatio : 95;
+
+            // Since avgChange is percent (e.g. -1.90), result is percent
+            // avgChange * 0.95
+            correction = avgChange * (ratio / 100);
+        } else {
+            // If no holdings or ratio 0, assume correction is same as estimate (0) or handle edge case
+            correction = weightedChange;
+        }
+
+        const correctionNav = f.dwjz && f.dwjz > 0
+            ? f.dwjz * (1 + correction / 100)
             : undefined;
 
         return {
             ...f,
             estimate: weightedChange,
             estimatedNav,
+            correction,
+            correctionNav,
             lastPriceTime: new Date().toLocaleTimeString()
         };
     });
@@ -249,6 +319,7 @@ export function useFunds() {
         updateFundHoldings,
         refreshInterval,
         updateConfig,
+        updateStockRatio,
         forceRefresh: fetchAllPrices
     };
 }

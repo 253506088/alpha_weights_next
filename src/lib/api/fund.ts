@@ -12,6 +12,7 @@ export interface FundInfo {
     holdings: FundHolding[];
     lastUpdate?: string;
     dwjz?: number; // 昨日净值 (单位净值)
+    stockRatio?: number; // 股票仓位 (0-100)
 }
 
 // 基金基本信息（从估算接口获取）
@@ -155,6 +156,29 @@ async function _fetchFundInternal(fundCode: string): Promise<FundInfo | null> {
 
     const basicInfo = await basicInfoPromise;
 
+    // Fetch Stock Ratio from pingzhongdata
+    // This file defines 'var Data_fundSharesPositions = [...]'
+    // We are already inside a queue lock, so it's safe to use globals
+    let stockRatio: number | undefined = undefined;
+    try {
+        // @ts-ignore
+        window.Data_fundSharesPositions = undefined;
+        // Use https to avoid mixed content
+        await loadScript(`https://fund.eastmoney.com/pingzhongdata/${fundCode}.js`);
+
+        // @ts-ignore
+        const positions = window.Data_fundSharesPositions;
+        if (Array.isArray(positions) && positions.length > 0) {
+            const latest = positions[positions.length - 1];
+            // Format: [timestamp, ratio] e.g. [1770134400000, 84.42]
+            if (Array.isArray(latest) && typeof latest[1] === 'number') {
+                stockRatio = latest[1];
+            }
+        }
+    } catch (e) {
+        console.warn("Failed to fetch stock ratio", e);
+    }
+
     if (holdings.length === 0 && basicInfo.name.startsWith("基金")) {
         // If both failed, return null
         return null;
@@ -164,6 +188,7 @@ async function _fetchFundInternal(fundCode: string): Promise<FundInfo | null> {
         code: fundCode,
         name: basicInfo.name,
         holdings,
-        dwjz: basicInfo.dwjz ?? undefined
+        dwjz: basicInfo.dwjz ?? undefined,
+        stockRatio
     };
 }

@@ -61,6 +61,15 @@ export function InfoModal({ onClose }: InfoModalProps) {
 
                         <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '15px', marginTop: '20px', fontSize: '12px', color: '#64748b' }}>
                             * 注意：估值仅供参考，实际净值请以基金公司官方公布为准。因只计算前十大重仓（通常占50%-70%仓位），与实际波动会有一定偏差。
+                            <br /><br />
+                            <strong style={{ color: '#e2e8f0' }}>关于【修正估值】：</strong><br />
+                            原有【预估】仅基于前十大持仓计算（假设剩余持仓波动为0），往往低估实际波动。
+                            <br />
+                            【修正预估】则结合了“股票总仓位”进行推算：
+                            <br />
+                            <code>修正涨跌 = (前十大涨跌 / 前十大占比) * 股票总仓位</code>
+                            <br />
+                            此算法假设剩余持仓的表现与前十大持仓一致，通常能给出更接近真实的估值。
                         </div>
                     </div>
                 </div>

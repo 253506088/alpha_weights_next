@@ -14,9 +14,12 @@ interface DetailModalProps {
 }
 
 export function DetailModal({ fund, onClose }: DetailModalProps) {
-    const { stockPrices } = useFunds();
+    const { stockPrices, updateStockRatio } = useFunds();
     const [hoveredIndex, setHoveredIndex] = useState<number>(-1);
     const [history, setHistory] = useState<FundHistoryItem[]>([]);
+
+    // Define stockRatio in scope
+    const stockRatio = (fund.stockRatio !== undefined && fund.stockRatio !== null) ? fund.stockRatio : 95;
 
     useEffect(() => {
         // Load history
@@ -26,6 +29,10 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
 
     // Chart Option matching legacy (Orange)
     const chartOption = useMemo(() => {
+        // Calculate conversion factors for Correction line
+        const totalRatio = fund.holdings.reduce((sum, h) => sum + h.ratio, 0);
+        // stockRatio is available in scope
+
         // Filter and map data
         const data = history
             .filter(h => {
@@ -38,9 +45,17 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                 const d = new Date(h.timestamp);
                 // Format HH:MM
                 const timeStr = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+
+                // Calculate correction for this point (using current weights approximation)
+                let correction = 0;
+                if (totalRatio > 0) {
+                    correction = (h.estimatedChange / totalRatio) * (stockRatio / 100);
+                }
+
                 return {
                     name: timeStr,
-                    value: [timeStr, h.estimatedChange.toFixed(2)] // [Time, Value]
+                    value: [timeStr, h.estimatedChange.toFixed(2)], // Estimate
+                    correction: [timeStr, correction.toFixed(2)] // Correction
                 };
             });
 
@@ -53,9 +68,23 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                 textStyle: { color: '#fff' },
                 formatter: function (params: any) {
                     if (params.length > 0) {
-                        const p = params[0];
-                        const val = parseFloat(p.value);
-                        return `${p.name}<br/>预估涨跌: <span style="color:${val >= 0 ? '#ef4444' : '#10b981'}">${p.value}%</span>`;
+                        const p0 = params[0]; // Estimate
+                        const p1 = params[1]; // Correction (if exists)
+
+                        let html = `${p0.name}<br/>`;
+
+                        // Estimate
+                        if (p0) {
+                            const val = parseFloat(p0.value[1]);
+                            html += `预估: <span style="color:${val >= 0 ? '#ef4444' : '#10b981'}">${p0.value[1]}%</span><br/>`;
+                        }
+                        // Correction
+                        if (p1) {
+                            const val = parseFloat(p1.value[1]);
+                            html += `修正: <span style="color:${val >= 0 ? '#ef4444' : '#10b981'}">${p1.value[1]}%</span>`;
+                        }
+
+                        return html;
                     }
                     return '';
                 }
@@ -77,26 +106,48 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                 splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
                 axisLabel: { color: '#94a3b8', formatter: '{value}%' }
             },
-            series: [{
-                data: data.map(d => d.value[1]), // Value is [time, val], we want val. Or just use value mapping? ECharts handles arrays better if type is 'time'? 
-                // But xAxis is category. So we just need the Y values.
-                type: 'line',
-                smooth: true,
-                showSymbol: false,
-                lineStyle: { width: 3, color: '#ff5e3a' }, // Orange
-                areaStyle: {
-                    color: {
-                        type: 'linear',
-                        x: 0, y: 0, x2: 0, y2: 1,
-                        colorStops: [
-                            { offset: 0, color: 'rgba(255, 94, 58, 0.2)' },
-                            { offset: 1, color: 'rgba(255, 94, 58, 0)' }
-                        ]
+            series: [
+                {
+                    name: '预估',
+                    data: data.map(d => d.value),
+                    type: 'line',
+                    smooth: true,
+                    showSymbol: false,
+                    lineStyle: { width: 2, color: '#888' }, // Gray/Dim for Estimate
+                    itemStyle: { color: '#888' },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(200, 200, 200, 0.1)' },
+                                { offset: 1, color: 'rgba(200, 200, 200, 0)' }
+                            ]
+                        }
+                    }
+                },
+                {
+                    name: '修正',
+                    data: data.map(d => d.correction),
+                    type: 'line',
+                    smooth: true,
+                    showSymbol: false,
+                    lineStyle: { width: 3, color: '#ff5e3a' }, // Orange/Primary for Correction
+                    itemStyle: { color: '#ff5e3a' },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(255, 94, 58, 0.2)' },
+                                { offset: 1, color: 'rgba(255, 94, 58, 0)' }
+                            ]
+                        }
                     }
                 }
-            }]
+            ]
         };
-    }, [history]);
+    }, [history, fund]);
 
     // Handle Chart Events
     const onChartEvents = {
@@ -105,12 +156,7 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                 setHoveredIndex(event.dataIndex);
             }
         },
-        'mouseout': () => {
-            // setHoveredIndex(-1); // Optional: keep last selection or reset? Legacy likely keeps it or resets.
-            // User said "Selecting a node...", implies it stays or helps to see specific time.
-            // Usually resetting is better UX unless clicked. But let's follow standard ECharts behavior.
-            // To match user description "Select", we might need click? Use updateAxisPointer is continuous.
-        }
+        'mouseout': () => { }
     };
 
     // Determine current holdings to display
@@ -155,10 +201,11 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                 <h3 style={{ marginBottom: '20px' }}>
                     {fund.name} <span style={{ fontWeight: 'normal', color: 'var(--text-sub)', fontSize: '16px' }}>({fund.code})</span>
                     {fund.dwjz && (
-                        <span style={{ marginLeft: '20px', fontSize: '14px', color: '#ff5e3a' }}>
-                            昨日净值: {fund.dwjz.toFixed(4)} &nbsp;&nbsp;
-                            预估净值: {fund.estimatedNav?.toFixed(4) || '--'}
-                        </span>
+                        <div style={{ marginTop: '5px', fontSize: '14px', color: '#ff5e3a', display: 'flex', gap: '15px' }}>
+                            <span>昨日: {fund.dwjz.toFixed(4)}</span>
+                            <span>预估: {fund.estimatedNav?.toFixed(4) || '--'}</span>
+                            <span style={{ fontWeight: 'bold' }}>修正: {fund.correctionNav?.toFixed(4) || '--'}</span>
+                        </div>
                     )}
                 </h3>
 
@@ -173,6 +220,19 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                         </div>
                         <div style={{ textAlign: 'center', marginTop: '10px', color: 'var(--text-sub)', fontSize: '12px' }}>
                             当前日期: {new Date().toLocaleDateString()}
+                            <div style={{ marginTop: '5px', cursor: 'pointer' }} onClick={() => {
+                                const val = prompt("请输入股票总仓位百分比 (例如 95):", stockRatio.toString());
+                                if (val) {
+                                    const num = parseFloat(val);
+                                    if (!isNaN(num) && num > 0 && num <= 100) {
+                                        updateStockRatio(fund.code, num);
+                                    } else {
+                                        alert("请输入有效的数值 (0-100)");
+                                    }
+                                }
+                            }} title="点击修改股票总仓位">
+                                股票总仓位: <span style={{ textDecoration: 'underline' }}>{stockRatio}%</span> (点击修改)
+                            </div>
                         </div>
                     </div>
 
@@ -224,6 +284,6 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
