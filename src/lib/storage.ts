@@ -12,8 +12,15 @@ export interface AppConfig {
 }
 
 export interface FundHistoryItem {
-    timestamp: string; // ISO or formatted
+    timestamp: number;
     estimatedChange: number;
+    holdingsSnapshot?: {
+        code: string;
+        name: string;
+        ratio: number;
+        percent: number;
+        price: number;
+    }[];
 }
 
 const KEYS = {
@@ -60,7 +67,7 @@ export const StorageManager = {
         } catch { return []; }
     },
 
-    appendFundHistory: (code: string, estimate: number) => {
+    appendFundHistory: (code: string, estimate: number, holdingsSnapshot?: FundHistoryItem['holdingsSnapshot']) => {
         if (typeof window === 'undefined') return;
         const history = StorageManager.getFundHistory(code);
 
@@ -81,8 +88,9 @@ export const StorageManager = {
         const cleanHistory = history.filter(h => new Date(h.timestamp).toDateString() === today);
 
         cleanHistory.push({
-            timestamp: now.toISOString(),
-            estimatedChange: estimate
+            timestamp: Date.now(),
+            estimatedChange: estimate,
+            holdingsSnapshot
         });
 
         localStorage.setItem(KEYS.HISTORY_PREFIX + code, JSON.stringify(cleanHistory));

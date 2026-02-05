@@ -9,6 +9,7 @@ export function loadScript(url: string): Promise<void> {
         const script = document.createElement('script');
         script.src = url;
         script.async = true;
+        script.referrerPolicy = 'no-referrer';
 
         script.onload = () => {
             document.body.removeChild(script);

@@ -32,6 +32,12 @@ export function useFunds() {
         }
     }, [funds]);
 
+    // Use Ref to access latest prices in callback without adding as dependency
+    const pricesRef = useRef(prices);
+    useEffect(() => {
+        pricesRef.current = prices;
+    }, [prices]);
+
     // Polling Logic
     const fetchAllPrices = useCallback(async () => {
         if (funds.length === 0) return;
@@ -54,16 +60,26 @@ export function useFunds() {
 
         funds.forEach(f => {
             let weightedChange = 0;
+            const snapshot: any[] = [];
+
             f.holdings.forEach(h => {
-                const stock = newPrices[h.code] || prices[h.code];
+                // Use newPrices first, fallback to ref
+                const stock = newPrices[h.code] || pricesRef.current[h.code];
                 if (stock) {
                     weightedChange += stock.percent * h.ratio;
+                    snapshot.push({
+                        code: h.code,
+                        name: h.name,
+                        ratio: h.ratio,
+                        percent: stock.percent,
+                        price: stock.price
+                    });
                 }
             });
-            StorageManager.appendFundHistory(f.code, weightedChange);
+            StorageManager.appendFundHistory(f.code, weightedChange, snapshot);
         });
 
-    }, [funds, prices]); // Added prices dependency to ensure we have fallback data? Actually fetchStocks returns newPrices.
+    }, [funds]); // Removed prices dependency to prevent infinite loop
 
     useEffect(() => {
         fetchAllPrices(); // Initial fetch on funds change
