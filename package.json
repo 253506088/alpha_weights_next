@@ -1,7 +1,10 @@
 {
-  "name": "alpha_weights_next",
+  "name": "@253506088/alpha_weights_next",
   "version": "0.1.0",
-  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/253506088/alpha_weights_next.git"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -27,5 +30,8 @@
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "publishConfig": {
+    "@253506088:registry": "https://npm.pkg.github.com"
   }
 }
