@@ -20,6 +20,7 @@ export function InfoModal({ onClose }: InfoModalProps) {
                 <div className="modal-body" style={{ display: 'block', padding: '0 10px' }}>
                     <div style={{ color: '#e2e8f0', lineHeight: '1.6', fontSize: '14px' }}>
 
+                        <h4 style={{ color: '#fff', fontSize: '16px', marginBottom: '10px', marginTop: '0' }}>本程序不构成任何投资建议</h4>
                         <h4 style={{ color: '#fff', fontSize: '16px', marginBottom: '10px', marginTop: '0' }}>1. 核心原理</h4>
                         <p style={{ marginBottom: '20px', color: '#94a3b8' }}>
                             本系统通过抓取基金的<strong style={{ color: '#e2e8f0' }}>前十大重仓股及其持仓占比</strong>，结合这些股票的<strong style={{ color: '#e2e8f0' }}>实时涨跌幅</strong>，来估算基金当天的实时净值变化。

@@ -25,7 +25,7 @@ export default function Home() {
 
   // Using specific style for container from legacy: max-width: 1200px
   return (
-    <main className="min-h-screen px-5 py-10 mx-auto max-w-[1200px] pb-20">
+    <main className="min-h-screen flex flex-col px-5 py-10 mx-auto max-w-[1200px] pb-20">
       {/* Header */}
       <header className="flex flex-col gap-6 mb-12 items-center text-center">
         <h1 className="flex items-center gap-[50px] m-0">
@@ -84,6 +84,9 @@ export default function Home() {
       {selectedFund && <DetailModal fund={selectedFund} onClose={() => setSelectedFund(null)} />}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
+
+      {/* Spacer to push footer to bottom */}
+      <div className="flex-grow"></div>
 
       <footer className="mt-16 text-center text-sm text-sub opacity-80 pb-5">
         <a href="https://github.com/253506088/alpha_weights" target="_blank" className="hover:text-white transition-colors no-underline flex items-center justify-center gap-2" style={{ color: 'var(--text-sub)' }}>
