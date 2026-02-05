@@ -368,6 +368,21 @@ body {
   color: var(--red);
 }
 
+/* 净值信息样式 */
+.nav-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-sub);
+  padding: 8px 0;
+  margin-top: 4px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.nav-info span {
+  display: block;
+}
+
 .card-footer {
   display: flex;
   justify-content: space-between;

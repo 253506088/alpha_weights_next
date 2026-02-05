@@ -5,6 +5,7 @@ export interface StoredFund {
     name: string;
     holdings: FundHolding[];
     lastUpdate: number; // timestamp
+    dwjz?: number; // 昨日净值
 }
 
 export interface AppConfig {

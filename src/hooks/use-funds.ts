@@ -9,6 +9,7 @@ import { log } from "@/lib/logger";
 export interface FundWithEstimate extends StoredFund {
     estimate: number;
     lastPriceTime: string;
+    estimatedNav?: number; // 预估净值 = dwjz * (1 + estimate/100)
 }
 
 export function useFunds() {
@@ -28,6 +29,7 @@ export function useFunds() {
                             ...f,
                             name: info.name,
                             holdings: info.holdings,
+                            dwjz: info.dwjz ?? f.dwjz,
                             lastUpdate: Date.now()
                         };
                     }
@@ -141,6 +143,7 @@ export function useFunds() {
                     code: info.code,
                     name: info.name,
                     holdings: info.holdings,
+                    dwjz: info.dwjz,
                     lastUpdate: Date.now()
                 };
                 setFunds(prev => [...prev, newFund]);
@@ -188,9 +191,15 @@ export function useFunds() {
             totalRatio += h.ratio;
         });
 
+        // 计算预估净值
+        const estimatedNav = f.dwjz && f.dwjz > 0
+            ? f.dwjz * (1 + weightedChange / 100)
+            : undefined;
+
         return {
             ...f,
             estimate: weightedChange,
+            estimatedNav,
             lastPriceTime: new Date().toLocaleTimeString() // This is rough, ideally comes from stock data
         };
     });

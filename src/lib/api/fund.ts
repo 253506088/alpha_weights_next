@@ -11,6 +11,13 @@ export interface FundInfo {
     name: string;
     holdings: FundHolding[];
     lastUpdate?: string;
+    dwjz?: number; // 昨日净值 (单位净值)
+}
+
+// 基金基本信息（从估算接口获取）
+interface FundBasicInfo {
+    name: string;
+    dwjz: number | null; // 昨日净值
 }
 
 // Global variable lock to prevent race conditions since Eastmoney uses a single 'apidata' variable
@@ -50,28 +57,30 @@ export async function fetchFundHoldings(fundCode: string): Promise<FundInfo | nu
     return enqueue(() => _fetchFundInternal(fundCode));
 }
 
-async function fetchFundName(code: string): Promise<string> {
+// 获取基金基本信息：名称和昨日净值
+async function fetchFundBasicInfo(code: string): Promise<FundBasicInfo> {
     const url = `https://fundgz.1234567.com.cn/js/${code}.js?rt=${Date.now()}`;
     return new Promise((resolve) => {
         const callbackName = 'jsonpgz';
         // @ts-ignore
         window[callbackName] = (data: any) => {
-            if (data && data.name) {
-                resolve(data.name);
+            if (data) {
+                const dwjz = data.dwjz ? parseFloat(data.dwjz) : null;
+                resolve({
+                    name: data.name || `基金${code}`,
+                    dwjz: isNaN(dwjz as number) ? null : dwjz
+                });
             } else {
-                resolve(`基金${code}`);
+                resolve({ name: `基金${code}`, dwjz: null });
             }
         };
 
         const script = document.createElement('script');
         script.src = url;
         script.onerror = () => {
-            resolve(`基金${code}`);
+            resolve({ name: `基金${code}`, dwjz: null });
         };
         document.body.appendChild(script);
-        // Clean up handled by specific implementation or simple append
-        // For simplicity and since these are small requests, we let them append
-        // But better to remove:
         script.onload = () => {
             document.body.removeChild(script);
         };
@@ -82,7 +91,7 @@ async function _fetchFundInternal(fundCode: string): Promise<FundInfo | null> {
     // Parallel fetch: Name and Holdings
     // Note: fundgz also gives realtime estimate, but we calculate it ourselves.
 
-    const namePromise = fetchFundName(fundCode);
+    const basicInfoPromise = fetchFundBasicInfo(fundCode);
 
     // Reset global apidata for holdings fetch
     // @ts-ignore
@@ -144,16 +153,17 @@ async function _fetchFundInternal(fundCode: string): Promise<FundInfo | null> {
         console.warn("Error fetching holdings", e);
     }
 
-    const fundName = await namePromise;
+    const basicInfo = await basicInfoPromise;
 
-    if (holdings.length === 0 && fundName.startsWith("基金")) {
+    if (holdings.length === 0 && basicInfo.name.startsWith("基金")) {
         // If both failed, return null
         return null;
     }
 
     return {
         code: fundCode,
-        name: fundName,
-        holdings
+        name: basicInfo.name,
+        holdings,
+        dwjz: basicInfo.dwjz ?? undefined
     };
 }

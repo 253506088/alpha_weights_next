@@ -52,6 +52,16 @@ export function FundCard({ fund, onRemove, onUpdate, onClick }: FundCardProps) {
                 <small>预估</small>
             </div>
 
+            {/* 净值信息 */}
+            {fund.dwjz && (
+                <div className="nav-info">
+                    <span>昨日净值: {fund.dwjz.toFixed(4)}</span>
+                    <span className={isUp ? 'up' : isDown ? 'down' : 'neutral'}>
+                        预估净值: {fund.estimatedNav?.toFixed(4) || '--'}
+                    </span>
+                </div>
+            )}
+
             <div className="card-footer">
                 <div className="total-ratio" title="前十持仓占比">
                     前十仓位: {totalRatio.toFixed(2)}%
