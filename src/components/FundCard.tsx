@@ -48,10 +48,10 @@ export function FundCard({ fund, onRemove, onUpdate, onClick }: FundCardProps) {
             </div>
             {/* 主体区域：左侧净值信息，右侧预估涨跌幅 */}
             <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {/* 左侧：净值信息三行 */}
+                {/* 左侧：净值信息三行 - 字体统一大小 */}
                 <div className="nav-info-left" style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
-                    {fund.dwjz && <div className="nav-row" style={{ fontSize: '0.8rem', color: '#888' }}>昨日: {fund.dwjz.toFixed(4)}</div>}
-                    <div className={`nav-row ${isUp ? 'up' : isDown ? 'down' : 'neutral'}`} style={{ fontSize: '0.85rem' }}>
+                    {fund.dwjz && <div className="nav-row" style={{ fontSize: '0.9rem', color: '#888' }}>昨日: {fund.dwjz.toFixed(4)}</div>}
+                    <div className={`nav-row ${isUp ? 'up' : isDown ? 'down' : 'neutral'}`} style={{ fontSize: '0.9rem' }}>
                         预估: {fund.estimatedNav?.toFixed(4) || '--'}
                     </div>
                     <div className={`nav-row ${fund.correction > 0 ? 'up' : fund.correction < 0 ? 'down' : 'neutral'}`} style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
@@ -59,14 +59,14 @@ export function FundCard({ fund, onRemove, onUpdate, onClick }: FundCardProps) {
                     </div>
                 </div>
 
-                {/* 右侧：预估涨跌幅 & 修正涨跌幅 */}
+                {/* 右侧：预估涨跌幅 & 修正涨跌幅 - 字全写，整体放大30% */}
                 <div className="value-column" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                    <div className={`value-sm ${isUp ? 'up' : isDown ? 'down' : 'neutral'}`} style={{ fontSize: '0.9rem' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#888', marginRight: '4px' }}>预</span>
+                    <div className={`value-sm ${isUp ? 'up' : isDown ? 'down' : 'neutral'}`} style={{ fontSize: '1.1rem' }}>
+                        <span style={{ fontSize: '0.8rem', color: '#888', marginRight: '4px' }}>预估</span>
                         {(fund.estimate > 0 ? "+" : "") + fund.estimate.toFixed(2)}%
                     </div>
-                    <div className={`value-lg ${fund.correction > 0 ? 'up' : fund.correction < 0 ? 'down' : 'neutral'}`} style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#888', marginRight: '4px' }}>修</span>
+                    <div className={`value-lg ${fund.correction > 0 ? 'up' : fund.correction < 0 ? 'down' : 'neutral'}`} style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+                        <span style={{ fontSize: '0.8rem', color: '#888', marginRight: '4px' }}>修正</span>
                         {(fund.correction > 0 ? "+" : "") + fund.correction.toFixed(2)}%
                     </div>
                 </div>

@@ -21,6 +21,10 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
 
     // 图表配置
     const chartOption = useMemo(() => {
+        // Calculate conversion factors for Correction line
+        const totalRatio = fund.holdings.reduce((sum, h) => sum + h.ratio, 0);
+        const stockRatio = (fund.stockRatio !== undefined && fund.stockRatio !== null) ? fund.stockRatio : 95;
+
         // Filter and map data
         const data = history
             .filter(h => {
@@ -32,9 +36,17 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
             .map(h => {
                 const d = new Date(h.timestamp);
                 const timeStr = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+
+                // Calculate correction for this point
+                let correction = 0;
+                if (totalRatio > 0) {
+                    correction = (h.estimatedChange / totalRatio) * (stockRatio / 100);
+                }
+
                 return {
                     name: timeStr,
-                    value: [timeStr, h.estimatedChange.toFixed(2)]
+                    value: [timeStr, h.estimatedChange.toFixed(2)],
+                    correction: [timeStr, correction.toFixed(2)] // Correction
                 };
             });
 
@@ -47,9 +59,19 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
                 textStyle: { color: '#fff', fontSize: 12 },
                 formatter: function (params: any) {
                     if (params.length > 0) {
-                        const p = params[0];
-                        const val = parseFloat(p.value);
-                        return `${p.name}<br/>预估: <span style="color:${val >= 0 ? '#ef4444' : '#10b981'}">${p.value}%</span>`;
+                        const p0 = params[0]; // Estimate
+                        const p1 = params[1]; // Correction
+
+                        let html = `${p0.name}<br/>`;
+                        if (p0) {
+                            const val = parseFloat(p0.value[1]);
+                            html += `预估: <span style="color:${val >= 0 ? '#ef4444' : '#10b981'}">${p0.value[1]}%</span><br/>`;
+                        }
+                        if (p1) {
+                            const val = parseFloat(p1.value[1]);
+                            html += `修正: <span style="color:${val >= 0 ? '#ef4444' : '#10b981'}">${p1.value[1]}%</span>`;
+                        }
+                        return html;
                     }
                     return '';
                 }
@@ -70,25 +92,48 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
                 splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
                 axisLabel: { color: '#94a3b8', formatter: '{value}%', fontSize: 10 }
             },
-            series: [{
-                data: data.map(d => d.value[1]),
-                type: 'line',
-                smooth: true,
-                showSymbol: false,
-                lineStyle: { width: 2, color: '#ff5e3a' },
-                areaStyle: {
-                    color: {
-                        type: 'linear',
-                        x: 0, y: 0, x2: 0, y2: 1,
-                        colorStops: [
-                            { offset: 0, color: 'rgba(255, 94, 58, 0.2)' },
-                            { offset: 1, color: 'rgba(255, 94, 58, 0)' }
-                        ]
+            series: [
+                {
+                    name: '预估',
+                    data: data.map(d => d.value),
+                    type: 'line',
+                    smooth: true,
+                    showSymbol: false,
+                    lineStyle: { width: 1.5, color: '#888' }, // Gray for Estimate
+                    itemStyle: { color: '#888' },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(200, 200, 200, 0.1)' },
+                                { offset: 1, color: 'rgba(200, 200, 200, 0)' }
+                            ]
+                        }
+                    }
+                },
+                {
+                    name: '修正',
+                    data: data.map(d => d.correction),
+                    type: 'line',
+                    smooth: true,
+                    showSymbol: false,
+                    lineStyle: { width: 2, color: '#ff5e3a' }, // Orange for Correction
+                    itemStyle: { color: '#ff5e3a' },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(255, 94, 58, 0.2)' },
+                                { offset: 1, color: 'rgba(255, 94, 58, 0)' }
+                            ]
+                        }
                     }
                 }
-            }]
+            ]
         };
-    }, [history]);
+    }, [history, fund]);
 
     // 持仓数据
     const displayHoldings = useMemo(() => {
@@ -103,6 +148,10 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
         });
         return rawList.sort((a, b) => b.ratio - a.ratio);
     }, [fund.holdings, stockPrices]);
+
+    // Props for editing
+    const { updateStockRatio } = useFunds();
+    const stockRatio = (fund.stockRatio !== undefined && fund.stockRatio !== null) ? fund.stockRatio : 95;
 
     const isUp = fund.estimate > 0;
     const isDown = fund.estimate < 0;
@@ -121,24 +170,50 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
                 </div>
 
                 <div className="mobile-modal-content">
-                    {/* 预估涨跌 */}
-                    <div className="mobile-detail-estimate">
-                        <div className={`mobile-detail-value ${isUp ? 'up' : isDown ? 'down' : 'neutral'}`}>
-                            {fund.estimate > 0 ? '+' : ''}{fund.estimate.toFixed(2)}%
+                    {/* 预估涨跌 - 手机版主要展示大数，这里保持原样还是改双列？用户说header改，手机版布局不同 */}
+                    {/* 手机版上面是涨跌幅大字，下面才是净值行。 */}
+                    {/* 既然要改header内容，手机版的"nav rows"在下面 */}
+
+                    <div className="mobile-detail-estimate" style={{ display: 'flex', justifyContent: 'space-around' }}>
+                        <div>
+                            <div className={`mobile-detail-value ${isUp ? 'up' : isDown ? 'down' : 'neutral'}`}>
+                                {fund.estimate > 0 ? '+' : ''}{fund.estimate.toFixed(2)}%
+                            </div>
+                            <div className="mobile-detail-label">预估涨跌</div>
                         </div>
-                        <div className="mobile-detail-label">预估涨跌</div>
+                        <div>
+                            <div className={`mobile-detail-value ${fund.correction > 0 ? 'up' : fund.correction < 0 ? 'down' : 'neutral'}`}>
+                                {(fund.correction > 0 ? "+" : "") + fund.correction.toFixed(2)}%
+                            </div>
+                            <div className="mobile-detail-label">修正涨跌</div>
+                        </div>
                     </div>
 
                     {fund.dwjz && (
                         <div style={{
                             display: 'flex',
-                            justifyContent: 'space-between',
+                            flexDirection: 'column',
+                            gap: '5px',
                             padding: '0 15px 10px 15px',
                             color: 'var(--text-sub)',
                             fontSize: '12px'
                         }}>
-                            <span>昨日: {fund.dwjz.toFixed(4)}</span>
-                            <span>预估: {fund.estimatedNav?.toFixed(4)}</span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#e2e8f0' }}>昨日: {fund.dwjz.toFixed(4)}</span>
+                                <span style={{ color: '#888' }}>预估: {fund.estimatedNav?.toFixed(4)} ({fund.estimate > 0 ? '+' : ''}{fund.estimate.toFixed(2)}%)</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span onClick={() => {
+                                    const val = prompt("请输入股票总仓位百分比 (例如 95):", stockRatio.toString());
+                                    if (val) {
+                                        const num = parseFloat(val);
+                                        if (!isNaN(num) && num > 0 && num <= 100) {
+                                            updateStockRatio(fund.code, num);
+                                        }
+                                    }
+                                }} style={{ textDecoration: 'underline', cursor: 'pointer' }}>仓位: {stockRatio}%</span>
+                                <span style={{ color: '#ff5e3a', fontWeight: 'bold' }}>修正: {fund.correctionNav?.toFixed(4)} ({(fund.correction > 0 ? "+" : "") + fund.correction.toFixed(2)}%)</span>
+                            </div>
                         </div>
                     )}
 

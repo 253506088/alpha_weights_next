@@ -201,10 +201,10 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                 <h3 style={{ marginBottom: '20px' }}>
                     {fund.name} <span style={{ fontWeight: 'normal', color: 'var(--text-sub)', fontSize: '16px' }}>({fund.code})</span>
                     {fund.dwjz && (
-                        <div style={{ marginTop: '5px', fontSize: '14px', color: '#ff5e3a', display: 'flex', gap: '15px' }}>
-                            <span>昨日: {fund.dwjz.toFixed(4)}</span>
-                            <span>预估: {fund.estimatedNav?.toFixed(4) || '--'}</span>
-                            <span style={{ fontWeight: 'bold' }}>修正: {fund.correctionNav?.toFixed(4) || '--'}</span>
+                        <div style={{ marginTop: '5px', fontSize: '14px', display: 'flex', gap: '15px' }}>
+                            <span style={{ color: '#e2e8f0' }}>昨日: {fund.dwjz.toFixed(4)}</span>
+                            <span style={{ color: '#888' }}>预估: {fund.estimatedNav?.toFixed(4) || '--'} ({fund.estimate > 0 ? '+' : ''}{fund.estimate.toFixed(2)}%)</span>
+                            <span style={{ color: '#ff5e3a', fontWeight: 'bold' }}>修正: {fund.correctionNav?.toFixed(4) || '--'} ({(fund.correction > 0 ? "+" : "") + fund.correction.toFixed(2)}%)</span>
                         </div>
                     )}
                 </h3>
@@ -239,7 +239,7 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                     <div className="modal-right">
                         <div className="detail-table-container">
                             <h4 style={{ marginTop: 0, marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-sub)', fontWeight: 500 }}>
-                                持仓详情
+                                前十重仓股
                                 <span style={{ fontWeight: 'normal', fontSize: '12px', opacity: 0.7 }}>
                                     {hoveredIndex >= 0 && history[hoveredIndex] ? new Date(history[hoveredIndex].timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                 </span>

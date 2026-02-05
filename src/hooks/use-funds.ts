@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { StorageManager, StoredFund } from "@/lib/storage";
 import { fetchStocks, StockData } from "@/lib/api/stock";
 import { fetchFundHoldings } from "@/lib/api/fund";
-import { log } from "@/lib/logger";
+import { log, logGroup } from "@/lib/logger";
 
 export interface FundWithEstimate extends StoredFund {
     estimate: number;
@@ -38,7 +38,17 @@ export function useFunds() {
                     }
                     return f;
                 }));
-                log("Action", `已更新持仓: ${code}`);
+
+                // Detailed Log
+                const details = [
+                    `基金名称: ${info.name} (${code})`,
+                    `股票总仓位: ${info.stockRatio ?? '未获取'}%`,
+                    `前十大持仓列表:`,
+                    ...info.holdings.map((h, i) =>
+                        `  ${i + 1}. [${h.code}] ${h.name} : ${(h.ratio * 100).toFixed(2)}%`
+                    )
+                ];
+                logGroup("Action", `已更新持仓: ${code}`, details);
             }
         } finally {
             setLoading(false);
