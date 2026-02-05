@@ -81,7 +81,7 @@ export function MobileHome({
                     <p className="mobile-disclaimer">
                         本程序按照基金公布的前十大重仓股当日的涨跌幅计算出预估涨跌幅，与基金真实的涨跌幅会有出入，主要取决于前十大重仓股在该基金的仓位占比，占比越高相对来说越准。本程序不构成任何投资建议。
                     </p>
-                    <a href="https://github.com/253506088/alpha_weights" target="_blank" className="mobile-github-link">
+                    <a href="https://github.com/253506088/alpha_weights_next" target="_blank" className="mobile-github-link">
                         GitHub
                     </a>
                 </footer>
