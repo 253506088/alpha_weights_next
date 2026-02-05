@@ -6,8 +6,8 @@ import { CreateFund } from "@/components/CreateFund";
 import { MobileSettingsModal } from "@/components/MobileSettingsModal";
 import { MobileDetailModal } from "@/components/MobileDetailModal";
 import { MobileInfoModal } from "@/components/MobileInfoModal";
-import { Info } from "lucide-react";
-import { useState } from "react";
+import { Info, ArrowUp, ArrowDown } from "lucide-react";
+import { useState, useMemo } from "react";
 
 interface MobileHomeProps {
     funds: FundWithEstimate[];
@@ -30,6 +30,36 @@ export function MobileHome({
     const [showSettings, setShowSettings] = useState(false);
     const [showInfo, setShowInfo] = useState(false);
 
+    // Sorting Logic
+    type SortKey = 'time' | 'estimate';
+    type SortDir = 'asc' | 'desc';
+    const [sortConfig, setSortConfig] = useState<{ key: SortKey; dir: SortDir }>({ key: 'time', dir: 'asc' });
+
+    const sortedFunds = useMemo(() => {
+        let sorted = [...funds];
+        if (sortConfig.key === 'time') {
+            if (sortConfig.dir === 'desc') {
+                sorted.reverse();
+            }
+        } else {
+            sorted.sort((a, b) => {
+                const valA = a.estimate;
+                const valB = b.estimate;
+                return sortConfig.dir === 'asc' ? valA - valB : valB - valA;
+            });
+        }
+        return sorted;
+    }, [funds, sortConfig]);
+
+    const handleSort = (key: SortKey) => {
+        setSortConfig(prev => {
+            if (prev.key === key) {
+                return { ...prev, dir: prev.dir === 'asc' ? 'desc' : 'asc' };
+            }
+            return { key, dir: 'asc' };
+        });
+    };
+
     return (
         <>
             <main className="mobile-main">
@@ -50,6 +80,29 @@ export function MobileHome({
                         </button>
                     </div>
 
+                    <div className="mobile-btn-group" style={{ marginTop: '10px' }}>
+                        <button
+                            onClick={() => handleSort('time')}
+                            className={`mobile-action-btn flex items-center gap-1 ${sortConfig.key === 'time' ? 'active' : ''}`}
+                            style={sortConfig.key === 'time' ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}}
+                        >
+                            添加时间
+                            {sortConfig.key === 'time' && (
+                                sortConfig.dir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                            )}
+                        </button>
+                        <button
+                            onClick={() => handleSort('estimate')}
+                            className={`mobile-action-btn flex items-center gap-1 ${sortConfig.key === 'estimate' ? 'active' : ''}`}
+                            style={sortConfig.key === 'estimate' ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}}
+                        >
+                            预估涨跌
+                            {sortConfig.key === 'estimate' && (
+                                sortConfig.dir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                            )}
+                        </button>
+                    </div>
+
                     {/* 添加基金 */}
                     <div className="mobile-add-fund">
                         <CreateFund onAdd={addFund} loading={loading} />
@@ -64,7 +117,7 @@ export function MobileHome({
                             <p>暂无基金，请添加代码开始监控</p>
                         </div>
                     ) : (
-                        funds.map(fund => (
+                        sortedFunds.map(fund => (
                             <MobileFundCard
                                 key={fund.code}
                                 fund={fund}

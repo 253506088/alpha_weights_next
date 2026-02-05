@@ -141,6 +141,12 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                 <div className="close-btn" onClick={onClose}>&times;</div>
                 <h3 style={{ marginBottom: '20px' }}>
                     {fund.name} <span style={{ fontWeight: 'normal', color: 'var(--text-sub)', fontSize: '16px' }}>({fund.code})</span>
+                    {fund.dwjz && (
+                        <span style={{ marginLeft: '20px', fontSize: '14px', color: '#ff5e3a' }}>
+                            昨日净值: {fund.dwjz.toFixed(4)} &nbsp;&nbsp;
+                            预估净值: {fund.estimatedNav?.toFixed(4) || '--'}
+                        </span>
+                    )}
                 </h3>
 
                 <div className="modal-body">
@@ -151,6 +157,9 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                                 style={{ height: '400px', width: '100%' }}
                                 onEvents={onChartEvents}
                             />
+                        </div>
+                        <div style={{ textAlign: 'center', marginTop: '10px', color: 'var(--text-sub)', fontSize: '12px' }}>
+                            当前日期: {new Date().toLocaleDateString()}
                         </div>
                     </div>
 
@@ -187,6 +196,17 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                                     })}
                                 </tbody>
                             </table>
+                            {displayHoldings.length > 0 && (
+                                <div style={{
+                                    padding: '10px',
+                                    textAlign: 'right',
+                                    color: '#ff5e3a',
+                                    fontWeight: 500,
+                                    borderTop: '1px solid rgba(255,255,255,0.05)'
+                                }}>
+                                    总占比: {(displayHoldings.reduce((sum, h) => sum + h.ratio, 0) * 100).toFixed(2)}%
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

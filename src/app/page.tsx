@@ -8,8 +8,8 @@ import { SettingsModal } from "@/components/SettingsModal";
 import { DetailModal } from "@/components/DetailModal";
 import { InfoModal } from "@/components/InfoModal";
 import { MobileHome } from "@/components/MobileHome";
-import { Info } from "lucide-react";
-import { useState } from "react";
+import { Info, ArrowUp, ArrowDown } from "lucide-react";
+import { useState, useMemo } from "react";
 
 export default function Home() {
   const {
@@ -26,6 +26,42 @@ export default function Home() {
   const [selectedFund, setSelectedFund] = useState<FundWithEstimate | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+
+  // Sorting Logic
+  type SortKey = 'time' | 'estimate';
+  type SortDir = 'asc' | 'desc';
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; dir: SortDir }>({ key: 'time', dir: 'asc' });
+
+  const sortedFunds = useMemo(() => {
+    // 默认 funds 是按添加时间 asc (数组顺序)
+    let sorted = [...funds];
+    if (sortConfig.key === 'time') {
+      if (sortConfig.dir === 'desc') {
+        sorted.reverse();
+      }
+    } else {
+      sorted.sort((a, b) => {
+        const valA = a.estimate;
+        const valB = b.estimate;
+        // Asc: 小到大, Desc: 大到小
+        return sortConfig.dir === 'asc' ? valA - valB : valB - valA;
+      });
+    }
+    return sorted;
+  }, [funds, sortConfig]);
+
+  const handleSort = (key: SortKey) => {
+    setSortConfig(prev => {
+      if (prev.key === key) {
+        // Toggle direction
+        return { ...prev, dir: prev.dir === 'asc' ? 'desc' : 'asc' };
+      }
+      // New key, default asc (or desc for numbers? usually lists start asc)
+      // For estimate, maybe desc (gainers) is better default? but let's stick to asc default for consistency unless specified.
+      // User said: "Default is按照添加时间asc排序". implied initial state.
+      return { key, dir: 'asc' };
+    });
+  };
 
   // 移动端渲染独立页面
   if (isMobile) {
@@ -69,6 +105,30 @@ export default function Home() {
             设置
           </button>
 
+          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
+
+          <button
+            onClick={() => handleSort('time')}
+            className={`refresh-btn-legacy flex items-center gap-1 ${sortConfig.key === 'time' ? 'text-white' : 'text-sub'}`}
+            style={sortConfig.key === 'time' ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}}
+          >
+            添加时间
+            {sortConfig.key === 'time' && (
+              sortConfig.dir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+            )}
+          </button>
+
+          <button
+            onClick={() => handleSort('estimate')}
+            className={`refresh-btn-legacy flex items-center gap-1 ${sortConfig.key === 'estimate' ? 'text-white' : 'text-sub'}`}
+            style={sortConfig.key === 'estimate' ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}}
+          >
+            预估涨跌
+            {sortConfig.key === 'estimate' && (
+              sortConfig.dir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+            )}
+          </button>
+
           <CreateFund onAdd={addFund} loading={loading} />
         </div>
       </header>
@@ -81,7 +141,7 @@ export default function Home() {
         </div>
       ) : (
         <div className="fund-grid">
-          {funds.map(fund => (
+          {sortedFunds.map(fund => (
             <FundCard
               key={fund.code}
               fund={fund}
@@ -102,9 +162,9 @@ export default function Home() {
       <div className="flex-grow"></div>
 
       <footer className="mt-16 text-center text-sm text-sub opacity-80 pb-5">
-          <p >
-              本程序与基金真实的涨跌幅会有出入，主要取决于前十大重仓股在该基金的仓位占比，占比越高相对来说越准，本程序不构成任何投资建议。
-          </p>
+        <p >
+          本程序与基金真实的涨跌幅会有出入，主要取决于前十大重仓股在该基金的仓位占比，占比越高相对来说越准，本程序不构成任何投资建议。
+        </p>
         <a href="https://github.com/253506088/alpha_weights_next" target="_blank" className="hover:text-white transition-colors no-underline flex items-center justify-center gap-2" style={{ color: 'var(--text-sub)' }}>
           GitHub
         </a>

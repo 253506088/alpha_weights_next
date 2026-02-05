@@ -118,12 +118,34 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
                         <div className="mobile-detail-label">预估涨跌</div>
                     </div>
 
+                    {fund.dwjz && (
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            padding: '0 15px 10px 15px',
+                            color: 'var(--text-sub)',
+                            fontSize: '12px'
+                        }}>
+                            <span>昨日: {fund.dwjz.toFixed(4)}</span>
+                            <span>预估: {fund.estimatedNav?.toFixed(4)}</span>
+                        </div>
+                    )}
+
                     {/* 图表 */}
                     <div className="mobile-detail-chart">
                         <ReactECharts
                             option={chartOption}
                             style={{ height: '180px', width: '100%' }}
                         />
+                    </div>
+                    <div style={{
+                        textAlign: 'center',
+                        color: 'var(--text-sub)',
+                        fontSize: '10px',
+                        marginTop: '-10px',
+                        marginBottom: '10px'
+                    }}>
+                        {new Date().toLocaleDateString()}
                     </div>
 
                     {/* 持仓列表 */}
@@ -144,9 +166,22 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
                                 );
                             })}
                         </div>
+                        {displayHoldings.length > 0 && (
+                            <div style={{
+                                padding: '15px 10px',
+                                textAlign: 'right',
+                                color: '#ff5e3a',
+                                fontWeight: 500,
+                                fontSize: '14px',
+                                borderTop: '1px solid rgba(255,255,255,0.05)'
+                            }}>
+                                总占比: {(displayHoldings.reduce((sum, h) => sum + h.ratio, 0) * 100).toFixed(2)}%
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
         </div>
+
     );
 }
