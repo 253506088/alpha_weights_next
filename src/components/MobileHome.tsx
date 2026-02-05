@@ -35,7 +35,7 @@ export function MobileHome({
             <main className="mobile-main">
                 {/* 标题 */}
                 <header className="mobile-header">
-                    <h1 className="mobile-title">基金前十重仓股估值看板</h1>
+                    <h1 className="mobile-title">基金宝：前十重仓股估值看板</h1>
 
                     {/* 按钮组 */}
                     <div className="mobile-btn-group">

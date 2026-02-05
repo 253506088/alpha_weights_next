@@ -49,7 +49,7 @@ export default function Home() {
         {/* 标题独占一行 */}
         <h1 className="flex items-center gap-[50px] m-0">
           <span className="title-text-legacy">
-            基金前十重仓股估值看板
+            基金宝：前十重仓股估值看板
           </span>
         </h1>
 

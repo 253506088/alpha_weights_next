@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "基金实时估值",
+  title: "基金宝",
   description: "Real-time Fund Valuation",
 };
 
