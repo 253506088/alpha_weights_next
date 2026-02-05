@@ -214,6 +214,51 @@ body {
   gap: 20px;
 }
 
+/* 移动端响应式: 基金卡片单列显示且占满一行 */
+@media (max-width: 640px) {
+  .fund-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .fund-card {
+    margin-left: -20px;
+    margin-right: -20px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  /* 移动端标题独占一行 */
+  .mobile-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .mobile-header h1 {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .title-text-legacy {
+    font-size: 24px;
+  }
+
+  /* 移动端布局: 按钮组独占一行 */
+  .input-group-legacy {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* 移动端添加基金组件独占一行 */
+  .mobile-create-fund {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+}
+
 .fund-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -355,6 +400,7 @@ body {
   color: var(--text-sub);
   opacity: 0.6;
 }
+
 /* Modal Styles (Restored & Scaled Down) */
 .modal-overlay {
   position: fixed;
@@ -381,9 +427,12 @@ body {
 .modal {
   background: #0f111a;
   width: 90%;
-  max-width: 900px; /* Scaled down from 1100px */
-  border-radius: 16px; /* Scaled down from 20px */
-  padding: 24px; /* Scaled down from 30px */
+  max-width: 900px;
+  /* Scaled down from 1100px */
+  border-radius: 16px;
+  /* Scaled down from 20px */
+  padding: 24px;
+  /* Scaled down from 30px */
   position: relative;
   max-height: 90vh;
   overflow-y: auto;
@@ -394,7 +443,8 @@ body {
 
 .modal-body {
   display: flex;
-  gap: 24px; /* Scaled down from 30px */
+  gap: 24px;
+  /* Scaled down from 30px */
   align-items: flex-start;
 }
 
@@ -404,10 +454,12 @@ body {
 }
 
 .modal-right {
-  width: 280px; /* Scaled down from 350px */
+  width: 280px;
+  /* Scaled down from 350px */
   flex-shrink: 0;
   border-left: 1px solid var(--border-color);
-  padding-left: 24px; /* Scaled down from 30px */
+  padding-left: 24px;
+  /* Scaled down from 30px */
 }
 
 .close-btn {
@@ -429,19 +481,22 @@ body {
   margin-top: 0;
   border-top: none;
   padding-top: 0;
-  max-height: 500px; /* Scaled down from 600px */
+  max-height: 500px;
+  /* Scaled down from 600px */
   overflow-y: auto;
 }
 
 .detail-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px; /* Scaled down from 14px */
+  font-size: 13px;
+  /* Scaled down from 14px */
 }
 
 .detail-table th,
 .detail-table td {
-  padding: 10px 8px; /* Scaled down from 12px 8px */
+  padding: 10px 8px;
+  /* Scaled down from 12px 8px */
   text-align: right;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-main);
@@ -451,7 +506,8 @@ body {
   text-align: right;
   color: var(--text-sub);
   font-weight: 500;
-  font-size: 11px; /* Scaled down from 12px */
+  font-size: 11px;
+  /* Scaled down from 12px */
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -479,4 +535,3 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
-

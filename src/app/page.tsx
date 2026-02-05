@@ -27,22 +27,17 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col px-5 py-10 mx-auto max-w-[1200px] pb-20">
       {/* Header */}
-      <header className="flex flex-col gap-6 mb-12 items-center text-center">
-        <h1 className="flex items-center gap-[50px] m-0">
+      <header className="mobile-header flex flex-col gap-6 mb-12 items-center text-center">
+        {/* 标题独占一行 */}
+        <h1 className="flex items-center gap-[50px] m-0 max-sm:flex-col max-sm:gap-3">
           <span className="title-text-legacy">
             基金前十重仓股估值看板
           </span>
-          <button className="refresh-btn-legacy" onClick={() => setShowInfo(true)}>系统说明</button>
         </h1>
 
-        {/* Input & Controls Group - Matching 'input-group' in legacy */}
+        {/* 按钮组 - 移动端独占一行 */}
         <div className="input-group-legacy">
-          <button
-            onClick={forceRefresh}
-            className="refresh-btn-legacy"
-          >
-            刷新列表
-          </button>
+          <button className="refresh-btn-legacy" onClick={() => setShowInfo(true)}>系统说明</button>
           <button
             onClick={forceRefresh}
             className="refresh-btn-legacy"
@@ -55,7 +50,10 @@ export default function Home() {
           >
             设置
           </button>
+        </div>
 
+        {/* 添加基金组件 - 移动端独占一行 */}
+        <div className="mobile-create-fund">
           <CreateFund onAdd={addFund} loading={loading} />
         </div>
       </header>
