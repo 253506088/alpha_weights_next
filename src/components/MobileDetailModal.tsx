@@ -13,6 +13,7 @@ interface MobileDetailModalProps {
 export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
     const { stockPrices } = useFunds();
     const [history, setHistory] = useState<FundHistoryItem[]>([]);
+    const [hoveredIndex, setHoveredIndex] = useState<number>(-1);
 
     useEffect(() => {
         const hist = StorageManager.getFundHistory(fund.code);
@@ -135,19 +136,48 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
         };
     }, [history, fund]);
 
+    // Handle Chart Events
+    const onChartEvents = {
+        'updateAxisPointer': (event: any) => {
+            if (event.dataIndex != null) {
+                setHoveredIndex(event.dataIndex);
+            }
+        },
+        'mouseout': () => { }
+    };
+
     // 持仓数据
     const displayHoldings = useMemo(() => {
-        const rawList = [...fund.holdings].map(h => {
-            const stock = stockPrices[h.code];
-            return {
-                code: h.code,
-                name: h.name,
-                ratio: h.ratio,
-                percent: stock ? stock.percent : 0
-            };
-        });
-        return rawList.sort((a, b) => b.ratio - a.ratio);
-    }, [fund.holdings, stockPrices]);
+        let rawList;
+        // If hovering and we have snapshot data
+        if (hoveredIndex >= 0 && history[hoveredIndex]?.holdingsSnapshot) {
+            rawList = [...history[hoveredIndex].holdingsSnapshot!];
+        } else {
+            // Default: Live data
+            rawList = [...fund.holdings].map(h => {
+                const stock = stockPrices[h.code];
+                return {
+                    code: h.code,
+                    name: h.name,
+                    ratio: h.ratio,
+                    percent: stock ? stock.percent : 0,
+                    price: stock ? stock.price : 0
+                };
+            });
+        }
+
+        // Deduplicate
+        const seen = new Set<string>();
+        const uniqueList = [];
+        for (const item of rawList) {
+            if (!seen.has(item.code)) {
+                seen.add(item.code);
+                uniqueList.push(item);
+            }
+        }
+
+        return uniqueList.sort((a, b) => b.ratio - a.ratio);
+    }, [fund.holdings, stockPrices, hoveredIndex, history]);
 
     // Props for editing
     const { updateStockRatio } = useFunds();
@@ -222,6 +252,7 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
                         <ReactECharts
                             option={chartOption}
                             style={{ height: '180px', width: '100%' }}
+                            onEvents={onChartEvents}
                         />
                     </div>
                     <div style={{
