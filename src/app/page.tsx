@@ -1,12 +1,14 @@
 "use client";
 
 import { useFunds, FundWithEstimate } from "@/hooks/use-funds";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { FundCard } from "@/components/FundCard";
 import { CreateFund } from "@/components/CreateFund";
 import { SettingsModal } from "@/components/SettingsModal";
 import { DetailModal } from "@/components/DetailModal";
 import { InfoModal } from "@/components/InfoModal";
-import { Settings, RefreshCw, Info } from "lucide-react";
+import { MobileHome } from "@/components/MobileHome";
+import { Info } from "lucide-react";
 import { useState } from "react";
 
 export default function Home() {
@@ -19,23 +21,39 @@ export default function Home() {
     forceRefresh
   } = useFunds();
 
+  const isMobile = useIsMobile();
+
   const [selectedFund, setSelectedFund] = useState<FundWithEstimate | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
 
-  // Using specific style for container from legacy: max-width: 1200px
+  // 移动端渲染独立页面
+  if (isMobile) {
+    return (
+      <MobileHome
+        funds={funds}
+        loading={loading}
+        addFund={addFund}
+        removeFund={removeFund}
+        updateFundHoldings={updateFundHoldings}
+        forceRefresh={forceRefresh}
+      />
+    );
+  }
+
+  // PC 端渲染
   return (
     <main className="min-h-screen flex flex-col px-5 py-10 mx-auto max-w-[1200px] pb-20">
       {/* Header */}
-      <header className="mobile-header flex flex-col gap-6 mb-12 items-center text-center">
+      <header className="flex flex-col gap-6 mb-12 items-center text-center">
         {/* 标题独占一行 */}
-        <h1 className="flex items-center gap-[50px] m-0 max-sm:flex-col max-sm:gap-3">
+        <h1 className="flex items-center gap-[50px] m-0">
           <span className="title-text-legacy">
             基金前十重仓股估值看板
           </span>
         </h1>
 
-        {/* 按钮组 - 移动端独占一行 */}
+        {/* 按钮组 */}
         <div className="input-group-legacy">
           <button className="refresh-btn-legacy" onClick={() => setShowInfo(true)}>系统说明</button>
           <button
@@ -50,10 +68,7 @@ export default function Home() {
           >
             设置
           </button>
-        </div>
 
-        {/* 添加基金组件 - 移动端独占一行 */}
-        <div className="mobile-create-fund">
           <CreateFund onAdd={addFund} loading={loading} />
         </div>
       </header>

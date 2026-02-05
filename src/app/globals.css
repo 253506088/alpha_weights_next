@@ -227,6 +227,8 @@ body {
     border-radius: 0;
     border-left: none;
     border-right: none;
+    padding-left: 24px;
+    padding-right: 24px;
   }
 
   /* 移动端标题独占一行 */
@@ -557,4 +559,563 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* ========================================
+   移动端专用样式 (MobileHome / MobileFundCard)
+   ======================================== */
+
+/* 移动端主容器 */
+.mobile-main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+/* 移动端头部 */
+.mobile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.mobile-title {
+  font-size: 22px;
+  font-weight: 700;
+  background: linear-gradient(to right, #ffffff, #94a3b8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+/* 移动端按钮组 */
+.mobile-btn-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mobile-action-btn {
+  font-size: 12px;
+  padding: 8px 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-sub);
+  backdrop-filter: blur(4px);
+}
+
+.mobile-action-btn:hover,
+.mobile-action-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* 移动端添加基金 */
+.mobile-add-fund {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* 移动端基金列表 */
+.mobile-fund-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-sub);
+}
+
+.mobile-empty-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  opacity: 0.5;
+}
+
+/* 移动端基金卡片 */
+.mobile-fund-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mobile-fund-card:active {
+  background: var(--bg-card-hover);
+  transform: scale(0.98);
+}
+
+/* 移动端卡片头部 */
+.mobile-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.mobile-card-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-fund-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.mobile-fund-code {
+  font-size: 12px;
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-update-btn {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+
+.mobile-delete-btn {
+  background: none;
+  border: none;
+  color: var(--text-sub);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+/* 移动端卡片主体 */
+.mobile-card-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.mobile-nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mobile-nav-row {
+  font-size: 14px;
+  color: var(--text-sub);
+}
+
+.mobile-estimate {
+  font-size: 28px;
+  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.mobile-estimate-label {
+  font-size: 12px;
+  color: var(--text-sub);
+  font-weight: 500;
+}
+
+/* 移动端卡片底部 */
+.mobile-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.mobile-ratio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mobile-ratio-dot {
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+.mobile-time {
+  opacity: 0.6;
+}
+
+/* 移动端底部 */
+.mobile-footer {
+  margin-top: auto;
+  padding: 24px 16px 16px;
+  text-align: center;
+}
+
+.mobile-disclaimer {
+  font-size: 11px;
+  color: var(--text-sub);
+  opacity: 0.7;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+.mobile-github-link {
+  font-size: 12px;
+  color: var(--text-sub);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.mobile-github-link:hover {
+  color: white;
+}
+
+/* ========================================
+   移动端弹窗样式
+   ======================================== */
+
+/* 遮罩层 */
+.mobile-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* 弹窗主体 */
+.mobile-modal {
+  width: 100%;
+  max-height: 90vh;
+  background: var(--bg-dark);
+  border-radius: 20px 20px 0 0;
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.mobile-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.mobile-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-sub);
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.mobile-modal-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* 设置弹窗样式 */
+.mobile-setting-group {
+  margin-bottom: 20px;
+}
+
+.mobile-setting-group label {
+  display: block;
+  color: var(--text-sub);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.mobile-input-wrap {
+  position: relative;
+}
+
+.mobile-input-wrap input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+}
+
+.mobile-saved-msg {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #10b981;
+  font-size: 12px;
+}
+
+.mobile-hint {
+  font-size: 12px;
+  color: var(--text-sub);
+  opacity: 0.7;
+  margin-top: 6px;
+}
+
+.mobile-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 20px 0;
+}
+
+.mobile-full-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mobile-full-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-full-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.mobile-full-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mobile-textarea {
+  width: 100%;
+  height: 80px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text-sub);
+  font-size: 13px;
+  font-family: monospace;
+  resize: none;
+  outline: none;
+  margin-top: 10px;
+}
+
+/* 系统说明弹窗样式 */
+.mobile-info-content {
+  line-height: 1.7;
+}
+
+.mobile-info-warning {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #ef4444;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.mobile-info-section {
+  margin-bottom: 20px;
+}
+
+.mobile-info-section h4 {
+  color: var(--text-main);
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+}
+
+.mobile-info-section p {
+  color: var(--text-sub);
+  font-size: 14px;
+  margin: 0;
+}
+
+.mobile-info-section ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-sub);
+  font-size: 14px;
+}
+
+.mobile-info-section li {
+  margin-bottom: 8px;
+}
+
+.mobile-info-section strong {
+  color: var(--text-main);
+}
+
+.mobile-info-note {
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--text-sub);
+  opacity: 0.7;
+}
+
+/* 详情弹窗样式 */
+.mobile-detail-modal {
+  max-height: 95vh;
+}
+
+.mobile-detail-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-detail-title h3 {
+  font-size: 16px;
+}
+
+.mobile-detail-code {
+  font-size: 12px;
+  color: var(--text-sub);
+  font-weight: normal;
+}
+
+.mobile-detail-estimate {
+  text-align: center;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
+}
+
+.mobile-detail-value {
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.mobile-detail-label {
+  font-size: 12px;
+  color: var(--text-sub);
+  margin-top: 4px;
+}
+
+.mobile-detail-chart {
+  margin-bottom: 20px;
+}
+
+.mobile-detail-holdings h4 {
+  font-size: 14px;
+  color: var(--text-main);
+  margin: 0 0 12px 0;
+}
+
+.mobile-holdings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-holding-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+.mobile-holding-name {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-holding-ratio {
+  width: 60px;
+  text-align: right;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.mobile-holding-percent {
+  width: 70px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 500;
 }
