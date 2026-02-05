@@ -102,6 +102,9 @@ export default function Home() {
       <div className="flex-grow"></div>
 
       <footer className="mt-16 text-center text-sm text-sub opacity-80 pb-5">
+          <p >
+              本程序与基金真实的涨跌幅会有出入，主要取决于前十大重仓股在该基金的仓位占比，占比越高相对来说越准，本程序不构成任何投资建议。
+          </p>
         <a href="https://github.com/253506088/alpha_weights_next" target="_blank" className="hover:text-white transition-colors no-underline flex items-center justify-center gap-2" style={{ color: 'var(--text-sub)' }}>
           GitHub
         </a>
