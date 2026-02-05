@@ -68,28 +68,23 @@ export const StorageManager = {
         } catch { return []; }
     },
 
-    appendFundHistory: (code: string, estimate: number, holdingsSnapshot?: FundHistoryItem['holdingsSnapshot']) => {
+    appendFundHistory: (code: string, estimate: number, holdingsSnapshot?: FundHistoryItem['holdingsSnapshot'], timestamp?: number) => {
         if (typeof window === 'undefined') return;
         const history = StorageManager.getFundHistory(code);
 
         // Simple deduplication by minute: Check if last item is same minute
-        const now = new Date();
-        const timeStr = `${now.getHours()}:${now.getMinutes()}`;
-        // We store full ISO, but checking against last item
-        // Actually simpler: just append. UI can filter.
-        // Or better: keep only today's data? 
-        // Legacy app: "Auto complete at 15:00".
-        // For now, simple append. 
-
-        // Prune old data (keep only today?)
-        // Let's keep 4 hours of data for now or just append.
-        // To match legacy "Intraday", we should clear old data on new day.
+        const now = timestamp ? new Date(timestamp) : new Date();
+        // ... (We could check against last item here to dedupe if needed, but for now simple append)
 
         const today = now.toDateString();
         const cleanHistory = history.filter(h => new Date(h.timestamp).toDateString() === today);
 
+        // If explicitly setting 11:30 or 15:30, remove any existing entry for that exact minute to avoid duplicates?
+        // Or just append. Chart usually handles it or we filter. 
+        // Let's just append for now.
+
         cleanHistory.push({
-            timestamp: Date.now(),
+            timestamp: timestamp || Date.now(),
             estimatedChange: estimate,
             holdingsSnapshot
         });

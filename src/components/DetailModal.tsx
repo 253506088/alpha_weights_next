@@ -26,11 +26,23 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
 
     // Chart Option matching legacy (Orange)
     const chartOption = useMemo(() => {
-        const data = history.map(h => {
-            const d = new Date(h.timestamp);
-            const timeStr = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-            return [timeStr, h.estimatedChange.toFixed(2)];
-        });
+        // Filter and map data
+        const data = history
+            .filter(h => {
+                // Filter out 11:31 - 12:59 data points (legacy or accidental)
+                const d = new Date(h.timestamp);
+                const t = d.getHours() * 100 + d.getMinutes();
+                return !(t > 1130 && t < 1300);
+            })
+            .map(h => {
+                const d = new Date(h.timestamp);
+                // Format HH:MM
+                const timeStr = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+                return {
+                    name: timeStr,
+                    value: [timeStr, h.estimatedChange.toFixed(2)] // [Time, Value]
+                };
+            });
 
         return {
             backgroundColor: 'transparent',
@@ -55,7 +67,7 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
             xAxis: {
                 type: 'category',
                 boundaryGap: false,
-                data: data.map(d => d[0]),
+                data: data.map(d => d.name),
                 axisLine: { lineStyle: { color: 'rgba(255,255,255,0.3)' } },
                 axisLabel: { color: '#94a3b8' }
             },
@@ -66,7 +78,8 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                 axisLabel: { color: '#94a3b8', formatter: '{value}%' }
             },
             series: [{
-                data: data.map(d => d[1]),
+                data: data.map(d => d.value[1]), // Value is [time, val], we want val. Or just use value mapping? ECharts handles arrays better if type is 'time'? 
+                // But xAxis is category. So we just need the Y values.
                 type: 'line',
                 smooth: true,
                 showSymbol: false,

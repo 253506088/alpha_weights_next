@@ -21,11 +21,22 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
 
     // 图表配置
     const chartOption = useMemo(() => {
-        const data = history.map(h => {
-            const d = new Date(h.timestamp);
-            const timeStr = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-            return [timeStr, h.estimatedChange.toFixed(2)];
-        });
+        // Filter and map data
+        const data = history
+            .filter(h => {
+                // Filter out 11:31 - 12:59 data points
+                const d = new Date(h.timestamp);
+                const t = d.getHours() * 100 + d.getMinutes();
+                return !(t > 1130 && t < 1300);
+            })
+            .map(h => {
+                const d = new Date(h.timestamp);
+                const timeStr = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+                return {
+                    name: timeStr,
+                    value: [timeStr, h.estimatedChange.toFixed(2)]
+                };
+            });
 
         return {
             backgroundColor: 'transparent',
@@ -49,7 +60,7 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
             xAxis: {
                 type: 'category',
                 boundaryGap: false,
-                data: data.map(d => d[0]),
+                data: data.map(d => d.name),
                 axisLine: { lineStyle: { color: 'rgba(255,255,255,0.3)' } },
                 axisLabel: { color: '#94a3b8', fontSize: 10 }
             },
@@ -60,7 +71,7 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
                 axisLabel: { color: '#94a3b8', formatter: '{value}%', fontSize: 10 }
             },
             series: [{
-                data: data.map(d => d[1]),
+                data: data.map(d => d.value[1]),
                 type: 'line',
                 smooth: true,
                 showSymbol: false,

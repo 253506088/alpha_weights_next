@@ -54,10 +54,6 @@ export function useFunds() {
         loaded.forEach(f => {
             const lastUpdateDate = f.lastUpdate ? new Date(f.lastUpdate).toDateString() : "";
             if (lastUpdateDate !== todayStr) {
-                // Trigger update
-                // We use the function logic but direct call since state might not be ready if we used the wrapper relying on 'funds' state? 
-                // Actually the wrapper uses functional SetState (prev => ...), so it is safe to call even if 'funds' state in this scope is empty?
-                // Yes, functional setState is safe.
                 log("AutoUpdate", `基金 ${f.name} 数据已过期，正在更新...`);
                 updateFundHoldings(f.code);
             }
@@ -77,9 +73,56 @@ export function useFunds() {
         pricesRef.current = prices;
     }, [prices]);
 
+    // Helper: Check if current time is within trading hours
+    const isTradingTime = () => {
+        const now = new Date();
+        const day = now.getDay();
+        if (day === 0 || day === 6) return false; // Weekends
+
+        const h = now.getHours();
+        const m = now.getMinutes();
+        const t = h * 100 + m;
+        // 09:15 ~ 11:30
+        // 13:00 ~ 15:30
+        return (t >= 915 && t <= 1130) || (t >= 1300 && t <= 1530);
+    };
+
+    // Helper: Get effective timestamp for history (Map 11:31-12:59 -> 11:30, >15:30 -> 15:30)
+    const getEffectiveTimestamp = () => {
+        const now = new Date();
+        const h = now.getHours();
+        const m = now.getMinutes();
+        const t = h * 100 + m;
+
+        // 11:31 ~ 12:59 -> 11:30
+        if (t > 1130 && t < 1300) {
+            const d = new Date(now);
+            d.setHours(11, 30, 0, 0);
+            return d.getTime();
+        }
+
+        // > 15:30 -> 15:30
+        if (t > 1530) {
+            const d = new Date(now);
+            d.setHours(15, 30, 0, 0);
+            return d.getTime();
+        }
+
+        return now.getTime();
+    };
+
     // Polling Logic
-    const fetchAllPrices = useCallback(async () => {
+    const fetchAllPrices = useCallback(async (force?: boolean | unknown) => {
         if (funds.length === 0) return;
+
+        // Force refresh if 'force' is true or an object (Event from click)
+        const isForce = force === true || (typeof force === 'object' && force !== null);
+        const trading = isTradingTime();
+
+        // Skip if not trading time AND not forced
+        if (!trading && !isForce) {
+            return;
+        }
 
         // Collect all stock codes
         const allCodes = new Set<string>();
@@ -89,20 +132,18 @@ export function useFunds() {
 
         if (allCodes.size === 0) return;
 
-        log("Polling", `正在获取 ${allCodes.size} 只股票行情`);
+        log("Polling", `正在获取 ${allCodes.size} 只股票行情 (${isForce ? "强制" : "自动"})`);
         const newPrices = await fetchStocks(Array.from(allCodes));
         setPrices(prev => ({ ...prev, ...newPrices }));
 
         // Record History loop
-        const now = Date.now();
-        // Throttle history saving? (Already throttled by refreshInterval >= 30s)
+        const effectiveTime = getEffectiveTimestamp();
 
         funds.forEach(f => {
             let weightedChange = 0;
             const snapshot: any[] = [];
 
             f.holdings.forEach(h => {
-                // Use newPrices first, fallback to ref
                 const stock = newPrices[h.code] || pricesRef.current[h.code];
                 if (stock) {
                     weightedChange += stock.percent * h.ratio;
@@ -115,15 +156,15 @@ export function useFunds() {
                     });
                 }
             });
-            StorageManager.appendFundHistory(f.code, weightedChange, snapshot);
+            StorageManager.appendFundHistory(f.code, weightedChange, snapshot, effectiveTime);
         });
 
     }, [funds]); // Removed prices dependency to prevent infinite loop
 
     useEffect(() => {
-        fetchAllPrices(); // Initial fetch on funds change
+        fetchAllPrices(true); // Initial fetch on funds change (Force)
 
-        const id = setInterval(fetchAllPrices, refreshInterval * 1000);
+        const id = setInterval(() => fetchAllPrices(false), refreshInterval * 1000);
         return () => clearInterval(id);
     }, [funds, refreshInterval, fetchAllPrices]);
 
@@ -166,8 +207,6 @@ export function useFunds() {
         }
     };
 
-    // updateFundHoldings moved up
-
     const updateConfig = (newInterval: number) => {
         if (newInterval < 30) newInterval = 30;
         setRefreshInterval(newInterval);
@@ -182,9 +221,6 @@ export function useFunds() {
 
         f.holdings.forEach(h => {
             const stock = prices[h.code];
-            // Note: h.ratio is 0.05 for 5%
-            // stock.percent is 1.23 for 1.23%
-            // contribution = 1.23 * 0.05
             if (stock) {
                 weightedChange += stock.percent * h.ratio;
             }
@@ -200,7 +236,7 @@ export function useFunds() {
             ...f,
             estimate: weightedChange,
             estimatedNav,
-            lastPriceTime: new Date().toLocaleTimeString() // This is rough, ideally comes from stock data
+            lastPriceTime: new Date().toLocaleTimeString()
         };
     });
 
