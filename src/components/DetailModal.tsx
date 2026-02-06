@@ -6,7 +6,7 @@ import { useFunds } from "@/hooks/use-funds"; // To get latest stock prices
 import { X } from "lucide-react";
 import ReactECharts from 'echarts-for-react';
 import { useEffect, useState, useMemo } from "react";
-import { cn } from "@/lib/utils";
+import { cn, getXueqiuStockUrl } from "@/lib/utils";
 
 interface DetailModalProps {
     fund: FundWithEstimate;
@@ -206,7 +206,10 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
             <div className="modal modal-legacy">
                 <div className="close-btn" onClick={onClose}>&times;</div>
                 <h3 style={{ marginBottom: '20px' }}>
-                    {fund.name} <span style={{ fontWeight: 'normal', color: 'var(--text-sub)', fontSize: '16px' }}>({fund.code})</span>
+                    <a href={`https://xueqiu.com/S/F${fund.code}`} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }} className="hover:underline">
+                        {fund.name}
+                    </a>
+                    <span style={{ fontWeight: 'normal', color: 'var(--text-sub)', fontSize: '16px', marginLeft: '6px' }}>({fund.code})</span>
                     {fund.dwjz && (
                         <div style={{ marginTop: '5px', fontSize: '14px', display: 'flex', gap: '15px' }}>
                             <span style={{ color: '#e2e8f0' }}>昨日: {fund.dwjz.toFixed(4)}</span>
@@ -270,7 +273,11 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
 
                                         return (
                                             <tr key={h.code}>
-                                                <td>{h.name}</td>
+                                                <td>
+                                                    <a href={getXueqiuStockUrl(h.code)} target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }} className="hover:underline">
+                                                        {h.name}
+                                                    </a>
+                                                </td>
                                                 <td>{(h.ratio * 100).toFixed(2)}%</td>
                                                 <td className={isUp ? 'up' : isDown ? 'down' : 'neutral'}>
                                                     {h.percent > 0 ? '+' : ''}{h.percent.toFixed(2)}%

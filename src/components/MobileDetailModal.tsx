@@ -4,6 +4,7 @@ import { FundWithEstimate, useFunds } from "@/hooks/use-funds";
 import { StorageManager, FundHistoryItem } from "@/lib/storage";
 import ReactECharts from 'echarts-for-react';
 import { useEffect, useState, useMemo } from "react";
+import { getXueqiuStockUrl } from "@/lib/utils";
 
 interface MobileDetailModalProps {
     fund: FundWithEstimate;
@@ -200,7 +201,11 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
             <div className="mobile-modal mobile-detail-modal">
                 <div className="mobile-modal-header">
                     <div className="mobile-detail-title">
-                        <h3>{fund.name}</h3>
+                        <h3>
+                            <a href={`https://xueqiu.com/S/F${fund.code}`} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                {fund.name}
+                            </a>
+                        </h3>
                         <span className="mobile-detail-code">{fund.code}</span>
                     </div>
                     <button className="mobile-modal-close" onClick={onClose}>&times;</button>
@@ -290,7 +295,11 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
                                 const cIsDown = contribution < 0;
                                 return (
                                     <div key={h.code} className="mobile-holding-item">
-                                        <div className="mobile-holding-name">{h.name}</div>
+                                        <div className="mobile-holding-name">
+                                            <a href={getXueqiuStockUrl(h.code)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                                {h.name}
+                                            </a>
+                                        </div>
                                         <div className="mobile-holding-ratio">{(h.ratio * 100).toFixed(2)}%</div>
                                         <div className={`mobile-holding-percent ${hIsUp ? 'up' : hIsDown ? 'down' : 'neutral'}`}>
                                             {h.percent > 0 ? '+' : ''}{h.percent.toFixed(2)}%
