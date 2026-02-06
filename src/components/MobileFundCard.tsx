@@ -45,15 +45,21 @@ export function MobileFundCard({ fund, onRemove, onUpdate, onClick }: MobileFund
                     {fund.dwjz && (
                         <>
                             <div className="mobile-nav-row">昨日净值: {fund.dwjz.toFixed(4)}</div>
-                            <div className={`mobile-nav-row ${isUp ? 'up' : isDown ? 'down' : 'neutral'}`}>
-                                预估净值: {fund.estimatedNav?.toFixed(4) || '--'}
+                            <div className={`mobile-nav-row ${fund.correction > 0 ? 'up' : fund.correction < 0 ? 'down' : 'neutral'}`}>
+                                修正净值: {fund.correctionNav?.toFixed(4) || '--'}
                             </div>
                         </>
                     )}
                 </div>
-                <div className={`mobile-estimate ${isUp ? 'up' : isDown ? 'down' : 'neutral'}`}>
-                    {percentStr}%
-                    <span className="mobile-estimate-label">预估</span>
+                <div className="flex flex-col items-end gap-1">
+                    <div className={`flex items-baseline gap-1 font-bold ${isUp ? 'text-up' : isDown ? 'text-down' : 'text-neutral'}`} style={{ fontSize: '20px', lineHeight: '1.2' }}>
+                        <span className="text-secondary text-xs mr-1 opacity-60 font-normal">预估</span>
+                        {percentStr}%
+                    </div>
+                    <div className={`flex items-baseline gap-1 font-bold ${fund.correction > 0 ? 'text-up' : fund.correction < 0 ? 'text-down' : 'text-neutral'}`} style={{ fontSize: '20px', lineHeight: '1.2' }}>
+                        <span className="text-secondary text-xs mr-1 opacity-60 font-normal">修正</span>
+                        {(fund.correction > 0 ? "+" : "") + fund.correction.toFixed(2)}%
+                    </div>
                 </div>
             </div>
 
