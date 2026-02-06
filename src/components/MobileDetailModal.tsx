@@ -276,9 +276,18 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
                     <div className="mobile-detail-holdings">
                         <h4>前十大重仓股</h4>
                         <div className="mobile-holdings-list">
+                            <div className="mobile-holding-header">
+                                <div className="mobile-header-item" style={{ flex: 1 }}>股票</div>
+                                <div className="mobile-header-item" style={{ width: '50px', textAlign: 'right' }}>占比</div>
+                                <div className="mobile-header-item" style={{ width: '60px', textAlign: 'right' }}>涨跌</div>
+                                <div className="mobile-header-item" style={{ width: '60px', textAlign: 'right' }}>贡献</div>
+                            </div>
                             {displayHoldings.map(h => {
                                 const hIsUp = h.percent > 0;
                                 const hIsDown = h.percent < 0;
+                                const contribution = h.ratio * h.percent;
+                                const cIsUp = contribution > 0;
+                                const cIsDown = contribution < 0;
                                 return (
                                     <div key={h.code} className="mobile-holding-item">
                                         <div className="mobile-holding-name">{h.name}</div>
@@ -286,20 +295,28 @@ export function MobileDetailModal({ fund, onClose }: MobileDetailModalProps) {
                                         <div className={`mobile-holding-percent ${hIsUp ? 'up' : hIsDown ? 'down' : 'neutral'}`}>
                                             {h.percent > 0 ? '+' : ''}{h.percent.toFixed(2)}%
                                         </div>
+                                        <div className={`mobile-holding-contribution ${cIsUp ? 'up' : cIsDown ? 'down' : 'neutral'}`}>
+                                            {contribution > 0 ? '+' : ''}{contribution.toFixed(2)}%
+                                        </div>
                                     </div>
                                 );
                             })}
                         </div>
                         {displayHoldings.length > 0 && (
                             <div style={{
-                                padding: '15px 10px',
-                                textAlign: 'right',
+                                display: 'flex',
+                                padding: '10px 12px',
+                                borderTop: '1px solid rgba(255,255,255,0.05)',
                                 color: '#ff5e3a',
                                 fontWeight: 500,
-                                fontSize: '14px',
-                                borderTop: '1px solid rgba(255,255,255,0.05)'
+                                fontSize: '13px'
                             }}>
-                                总占比: {(displayHoldings.reduce((sum, h) => sum + h.ratio, 0) * 100).toFixed(2)}%
+                                <div style={{ flex: 1, textAlign: 'right', paddingRight: '10px', color: 'var(--text-sub)' }}>前十持仓合计</div>
+                                <div style={{ width: '50px', textAlign: 'right' }}>
+                                    {(displayHoldings.reduce((sum, h) => sum + h.ratio, 0) * 100).toFixed(2)}%
+                                </div>
+                                <div style={{ width: '60px' }}></div>
+                                <div style={{ width: '60px' }}></div>
                             </div>
                         )}
                     </div>

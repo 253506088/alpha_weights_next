@@ -257,12 +257,16 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                                         <th>股票</th>
                                         <th>占比</th>
                                         <th>涨跌</th>
+                                        <th>贡献涨跌</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {displayHoldings.map(h => {
                                         const isUp = h.percent > 0;
                                         const isDown = h.percent < 0;
+                                        const contribution = h.ratio * h.percent;
+                                        const cIsUp = contribution > 0;
+                                        const cIsDown = contribution < 0;
 
                                         return (
                                             <tr key={h.code}>
@@ -271,22 +275,28 @@ export function DetailModal({ fund, onClose }: DetailModalProps) {
                                                 <td className={isUp ? 'up' : isDown ? 'down' : 'neutral'}>
                                                     {h.percent > 0 ? '+' : ''}{h.percent.toFixed(2)}%
                                                 </td>
+                                                <td className={cIsUp ? 'up' : cIsDown ? 'down' : 'neutral'}>
+                                                    {contribution > 0 ? '+' : ''}{contribution.toFixed(2)}%
+                                                </td>
                                             </tr>
                                         );
                                     })}
                                 </tbody>
+                                {displayHoldings.length > 0 && (
+                                    <tfoot>
+                                        <tr style={{
+                                            fontSize: '13px',
+                                            fontWeight: 500,
+                                            color: '#ff5e3a'
+                                        }}>
+                                            <td style={{ textAlign: 'right', color: 'var(--text-sub)' }}>合计</td>
+                                            <td>{(displayHoldings.reduce((sum, h) => sum + h.ratio, 0) * 100).toFixed(2)}%</td>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                )}
                             </table>
-                            {displayHoldings.length > 0 && (
-                                <div style={{
-                                    padding: '10px',
-                                    textAlign: 'right',
-                                    color: '#ff5e3a',
-                                    fontWeight: 500,
-                                    borderTop: '1px solid rgba(255,255,255,0.05)'
-                                }}>
-                                    总占比: {(displayHoldings.reduce((sum, h) => sum + h.ratio, 0) * 100).toFixed(2)}%
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>

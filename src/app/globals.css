@@ -1107,15 +1107,34 @@ body {
 }
 
 .mobile-holding-ratio {
-  width: 60px;
+  width: 50px;
   text-align: right;
   font-size: 13px;
   color: var(--text-sub);
 }
 
 .mobile-holding-percent {
-  width: 70px;
+  width: 60px;
   text-align: right;
   font-size: 13px;
   font-weight: 500;
+}
+
+.mobile-holding-contribution {
+  width: 60px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.mobile-holding-header {
+  display: flex;
+  padding: 0 12px;
+  margin-bottom: 4px;
+}
+
+.mobile-header-item {
+  font-size: 12px;
+  color: var(--text-sub);
+  opacity: 0.8;
 }
