@@ -158,6 +158,20 @@ jobs:
 
 ---
 
+## 测试隔日更新
+
+1. 按一下键盘上的 F12 键（或者右键点击页面 -> 检查），打开开发者工具。
+2. 点一下 “Console” (或者 “控制台”) 那个标签。
+3. 把下面这段代码复制进去，按回车：
+
+```JS
+const key = 'alpha_weights_funds';
+const funds = JSON.parse(localStorage.getItem(key) || '[]');
+funds.forEach(f => f.lastUpdate = new Date().getTime() - 86400000 * 2); 
+localStorage.setItem(key, JSON.stringify(funds));
+alert('时间已重置！请刷新页面。');
+```
+
 ## 注意事项
 
 ⚠️ 估值仅供参考，实际净值请以基金公司官方公布为准。
