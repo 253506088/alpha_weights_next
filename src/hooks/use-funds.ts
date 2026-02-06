@@ -72,7 +72,7 @@ export function useFunds() {
     // Helper: Delay promise
     const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-    const updateAllFundHoldings = useCallback(async (force: boolean = false) => {
+    const updateAllFundHoldings = useCallback(async (force: boolean = false, fundsSource?: StoredFund[]) => {
         if (isUpdatingAll.current) {
             log("AutoUpdate", "Update already in progress, skipping...");
             return;
@@ -81,10 +81,12 @@ export function useFunds() {
         const now = new Date();
         const todayStr = now.toDateString();
 
+        const currentFunds = fundsSource || funds;
+
         // Filter funds that need update
         const fundsToUpdate = force
-            ? funds
-            : funds.filter(f => {
+            ? currentFunds
+            : currentFunds.filter(f => {
                 const lastUpdateDate = f.lastUpdate ? new Date(f.lastUpdate).toDateString() : "";
                 return lastUpdateDate !== todayStr;
             });
@@ -149,7 +151,7 @@ export function useFunds() {
                 // We call the function. Since it effectively iterates 'funds', providing we have latest scope.
                 // However, checkDailyRefresh is defined inside component? Yes. 
                 // So it can call updateAllFundHoldings.
-                updateAllFundHoldings(false);
+                updateAllFundHoldings(false, currentFunds);
             }
         }
     };
