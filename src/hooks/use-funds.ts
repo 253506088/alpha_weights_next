@@ -42,6 +42,7 @@ export function useFunds() {
                 // Detailed Log
                 const details = [
                     `基金名称: ${info.name} (${code})`,
+                    `昨日净值: ${info.dwjz ?? '未获取'}`,
                     `股票总仓位: ${info.stockRatio ?? '未获取'}%`,
                     `前十大持仓列表:`,
                     ...info.holdings.map((h, i) =>
@@ -66,32 +67,89 @@ export function useFunds() {
         checkDailyRefresh(loaded);
     }, []);
 
+    const isUpdatingAll = useRef(false);
+
+    // Helper: Delay promise
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+    const updateAllFundHoldings = useCallback(async (force: boolean = false) => {
+        if (isUpdatingAll.current) {
+            log("AutoUpdate", "Update already in progress, skipping...");
+            return;
+        }
+
+        const now = new Date();
+        const todayStr = now.toDateString();
+
+        // Filter funds that need update
+        const fundsToUpdate = force
+            ? funds
+            : funds.filter(f => {
+                const lastUpdateDate = f.lastUpdate ? new Date(f.lastUpdate).toDateString() : "";
+                return lastUpdateDate !== todayStr;
+            });
+
+        if (fundsToUpdate.length === 0) {
+            if (force) alert("没有找到需要更新的基金");
+            return;
+        }
+
+        isUpdatingAll.current = true;
+
+        try {
+            log("AutoUpdate", `开始批量更新 ${fundsToUpdate.length} 个基金...`);
+
+            for (let i = 0; i < fundsToUpdate.length; i++) {
+                const f = fundsToUpdate[i];
+                log("AutoUpdate", `[${i + 1}/${fundsToUpdate.length}] 正在更新: ${f.name} (${f.code})`);
+
+                try {
+                    await updateFundHoldings(f.code);
+                } catch (e) {
+                    console.error(`Failed to update ${f.code}`, e);
+                }
+
+                // Delay 2s to avoid rate limits
+                if (i < fundsToUpdate.length - 1) {
+                    await delay(2000);
+                }
+            }
+            log("AutoUpdate", "批量更新完成");
+
+            // Trigger one final price fetch after all updates
+            fetchAllPrices(true);
+
+            if (force) alert("批量更新全部完成");
+        } finally {
+            isUpdatingAll.current = false;
+        }
+    }, [funds]); // Dependencies might need review if updateFundHoldings is stable
+
     const checkDailyRefresh = async (currentFunds: StoredFund[]) => {
         const now = new Date();
         const hour = now.getHours();
-        const todayStr = now.toDateString();
 
         // Check if it's past 9:00 AM
         if (hour >= 9) {
-            let needsRefresh = false;
-            for (const f of currentFunds) {
-                const lastUpdateDate = f.lastUpdate ? new Date(f.lastUpdate).toDateString() : "";
-                if (lastUpdateDate !== todayStr) {
-                    needsRefresh = true;
-                    log("AutoUpdate", `基金 ${f.name} 数据已过期 (${lastUpdateDate} vs ${todayStr})，正在更新...`);
-                }
-            }
+            // Trigger update all (non-force mode checks dates internally)
+            // But we can't call useCallback'd updateAllFundHoldings easily here because of closure staleness if not careful?
+            // Actually, checkDailyRefresh is called from useEffect which depends on funds.
+            // But updateAllFundHoldings depends on funds too. 
+            // We can just call it. But wait, updateAllFundHoldings uses 'funds' state.
+            // 'currentFunds' passed here is 'funds'.
 
-            if (needsRefresh) {
-                // Refresh all one by one (or could be parallel but let's be safe)
-                // We reuse updateFundHoldings but calling it in loop might trigger multiple state updates
-                // Better to simple iterate and update.
-                for (const f of currentFunds) {
-                    const lastUpdateDate = f.lastUpdate ? new Date(f.lastUpdate).toDateString() : "";
-                    if (lastUpdateDate !== todayStr) {
-                        await updateFundHoldings(f.code);
-                    }
-                }
+            // To be safe, we check condition here quickly to avoid calling the big function unnecessarily
+            const todayStr = now.toDateString();
+            const needsRefresh = currentFunds.some(f => {
+                const lastUpdateDate = f.lastUpdate ? new Date(f.lastUpdate).toDateString() : "";
+                return lastUpdateDate !== todayStr;
+            });
+
+            if (needsRefresh && !isUpdatingAll.current) {
+                // We call the function. Since it effectively iterates 'funds', providing we have latest scope.
+                // However, checkDailyRefresh is defined inside component? Yes. 
+                // So it can call updateAllFundHoldings.
+                updateAllFundHoldings(false);
             }
         }
     };
@@ -206,7 +264,10 @@ export function useFunds() {
     }, [funds]); // Removed prices dependency to prevent infinite loop
 
     useEffect(() => {
-        fetchAllPrices(true); // Initial fetch on funds change (Force)
+        // Suppress initial/update fetch if we are in batch update mode
+        if (!isUpdatingAll.current) {
+            fetchAllPrices(true); // Initial fetch on funds change (Force)
+        }
 
         const id = setInterval(() => fetchAllPrices(false), refreshInterval * 1000);
         return () => clearInterval(id);
@@ -330,6 +391,7 @@ export function useFunds() {
         refreshInterval,
         updateConfig,
         updateStockRatio,
-        forceRefresh: fetchAllPrices
+        forceRefresh: fetchAllPrices,
+        updateAllFundHoldings
     };
 }

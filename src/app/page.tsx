@@ -18,7 +18,8 @@ export default function Home() {
     addFund,
     removeFund,
     updateFundHoldings,
-    forceRefresh
+    forceRefresh,
+    updateAllFundHoldings
   } = useFunds();
 
   const isMobile = useIsMobile();
@@ -97,6 +98,12 @@ export default function Home() {
             className="refresh-btn-legacy"
           >
             立即计算
+          </button>
+          <button
+            onClick={() => updateAllFundHoldings(true)}
+            className="refresh-btn-legacy"
+          >
+            更新全部持仓
           </button>
           <button
             onClick={() => setShowSettings(true)}
