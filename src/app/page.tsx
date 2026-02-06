@@ -74,6 +74,7 @@ export default function Home() {
         removeFund={removeFund}
         updateFundHoldings={updateFundHoldings}
         forceRefresh={forceRefresh}
+        updateAllFundHoldings={updateAllFundHoldings}
       />
     );
   }

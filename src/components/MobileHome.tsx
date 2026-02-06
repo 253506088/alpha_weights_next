@@ -16,6 +16,7 @@ interface MobileHomeProps {
     removeFund: (code: string) => void;
     updateFundHoldings: (code: string) => Promise<void>;
     forceRefresh: () => Promise<void>;
+    updateAllFundHoldings: (force: boolean) => Promise<void>;
 }
 
 export function MobileHome({
@@ -24,7 +25,8 @@ export function MobileHome({
     addFund,
     removeFund,
     updateFundHoldings,
-    forceRefresh
+    forceRefresh,
+    updateAllFundHoldings
 }: MobileHomeProps) {
     const [selectedFund, setSelectedFund] = useState<FundWithEstimate | null>(null);
     const [showSettings, setShowSettings] = useState(false);
@@ -71,6 +73,9 @@ export function MobileHome({
                     <div className="mobile-btn-group">
                         <button className="mobile-action-btn" onClick={() => setShowInfo(true)}>
                             系统说明
+                        </button>
+                        <button className="mobile-action-btn" onClick={() => updateAllFundHoldings(true)}>
+                            更新全部
                         </button>
                         <button className="mobile-action-btn" onClick={forceRefresh}>
                             立即计算
