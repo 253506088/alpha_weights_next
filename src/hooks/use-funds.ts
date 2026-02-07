@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { StorageManager, StoredFund } from "@/lib/storage";
 import { fetchStocks, StockData } from "@/lib/api/stock";
 import { fetchFundHoldings } from "@/lib/api/fund";
+import { HolidayManager } from "@/lib/api/holiday";
 import { log, logGroup } from "@/lib/logger";
 
 export interface FundWithEstimate extends StoredFund {
@@ -47,10 +48,15 @@ export function useFunds() {
                     `前十大持仓列表:`,
                     ...info.holdings.map((h, i) =>
                         `  ${i + 1}. [${h.code}] ${h.name} : ${(h.ratio * 100).toFixed(2)}%`
-                    )
+                    ),
+                    `—————— 原始数据 (Raw Data) ——————`,
+                    info
                 ];
                 logGroup("Action", `已更新持仓: ${code}`, details);
+            } else {
+                log("Action", `更新失败: 未能获取到基金 ${code} 的数据`);
             }
+
         } finally {
             setLoading(false);
         }
@@ -177,12 +183,17 @@ export function useFunds() {
         pricesRef.current = prices;
     }, [prices]);
 
-    // Helper: Check if current time is within trading hours
-    const isTradingTime = () => {
-        const now = new Date();
-        const day = now.getDay();
-        if (day === 0 || day === 6) return false; // Weekends
+    // 判断今天是否是交易日（使用 HolidayManager 检查节假日）
+    const isTodayTradingDay = () => {
+        return HolidayManager.isTradingDay(new Date());
+    };
 
+    // 判断当前是否在交易时段内
+    const isTradingTime = () => {
+        // 首先检查今天是否是交易日
+        if (!isTodayTradingDay()) return false;
+
+        const now = new Date();
         const h = now.getHours();
         const m = now.getMinutes();
         const t = h * 100 + m;
@@ -221,9 +232,18 @@ export function useFunds() {
 
         // Force refresh if 'force' is true or an object (Event from click)
         const isForce = force === true || (typeof force === 'object' && force !== null);
+        const todayIsTradingDay = isTodayTradingDay();
         const trading = isTradingTime();
 
-        // Skip if not trading time AND not forced
+        // 非交易日：即使强制刷新也跳过股票行情获取
+        if (!todayIsTradingDay) {
+            if (isForce) {
+                log("Polling", "今天是非交易日，跳过股票行情获取");
+            }
+            return;
+        }
+
+        // 交易日但非交易时段：跳过（除非强制）
         if (!trading && !isForce) {
             return;
         }
@@ -296,9 +316,23 @@ export function useFunds() {
                     lastUpdate: Date.now()
                 };
                 setFunds(prev => [...prev, newFund]);
-                log("Action", `基金添加成功: ${info.name}`);
+
+                const details = [
+                    `基金名称: ${info.name} (${code})`,
+                    `昨日净值: ${info.dwjz ?? '未获取'}`,
+                    `股票总仓位: ${info.stockRatio ?? '未获取'}%`,
+                    `前十大持仓列表:`,
+                    ...info.holdings.map((h, i) =>
+                        `  ${i + 1}. [${h.code}] ${h.name} : ${(h.ratio * 100).toFixed(2)}%`
+                    ),
+                    `—————— 原始数据 (Raw Data) ——————`,
+                    info
+                ];
+                logGroup("Action", `基金添加成功: ${info.name}`, details);
             } else {
-                alert("获取基金数据失败，请检查代码");
+                const msg = "获取基金数据失败，请检查代码";
+                log("Action", msg);
+                alert(msg);
             }
         } catch (e) {
             console.error(e);

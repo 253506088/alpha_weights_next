@@ -8,7 +8,8 @@ import { SettingsModal } from "@/components/SettingsModal";
 import { DetailModal } from "@/components/DetailModal";
 import { InfoModal } from "@/components/InfoModal";
 import { MobileHome } from "@/components/MobileHome";
-import { Info, ArrowUp, ArrowDown } from "lucide-react";
+import { CalendarModal } from "@/components/CalendarModal";
+import { Info, ArrowUp, ArrowDown, Calendar } from "lucide-react";
 import { useState, useMemo } from "react";
 
 export default function Home() {
@@ -27,6 +28,7 @@ export default function Home() {
   const [selectedFund, setSelectedFund] = useState<FundWithEstimate | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   // Sorting Logic
   type SortKey = 'time' | 'estimate';
@@ -137,6 +139,14 @@ export default function Home() {
             )}
           </button>
 
+          <button
+            onClick={() => setShowCalendar(true)}
+            className="refresh-btn-legacy flex items-center gap-1 text-sub"
+          >
+            <Calendar size={14} />
+            日历
+          </button>
+
           <CreateFund onAdd={addFund} loading={loading} />
         </div>
       </header>
@@ -165,6 +175,7 @@ export default function Home() {
       {selectedFund && <DetailModal fund={selectedFund} onClose={() => setSelectedFund(null)} />}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
+      {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} />}
 
       {/* Spacer to push footer to bottom */}
       <div className="flex-grow"></div>

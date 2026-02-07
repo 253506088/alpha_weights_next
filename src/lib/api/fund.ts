@@ -1,4 +1,7 @@
 import { loadScript } from './jsonp';
+import { HolidayManager } from './holiday';
+import { log } from '../logger';
+
 
 export interface FundHolding {
     code: string;
@@ -16,9 +19,11 @@ export interface FundInfo {
 }
 
 // 基金基本信息（从估算接口获取）
+// 基金基本信息（从估算接口获取）
 interface FundBasicInfo {
     name: string;
     dwjz: number | null; // 昨日净值
+    date?: string; // 净值日期
 }
 
 // Global variable lock to prevent race conditions since Eastmoney uses a single 'apidata' variable
@@ -69,7 +74,8 @@ async function fetchFundBasicInfo(code: string): Promise<FundBasicInfo> {
                 const dwjz = data.dwjz ? parseFloat(data.dwjz) : null;
                 resolve({
                     name: data.name || `基金${code}`,
-                    dwjz: isNaN(dwjz as number) ? null : dwjz
+                    dwjz: isNaN(dwjz as number) ? null : dwjz,
+                    date: data.jzrq // 2026-02-05
                 });
             } else {
                 resolve({ name: `基金${code}`, dwjz: null });
@@ -89,17 +95,30 @@ async function fetchFundBasicInfo(code: string): Promise<FundBasicInfo> {
 }
 
 async function _fetchFundInternal(fundCode: string): Promise<FundInfo | null> {
-    // Parallel fetch: Name and Holdings
-    // Note: fundgz also gives realtime estimate, but we calculate it ourselves.
+
+    // 1. Holiday Check & Target Date Calculation
+    await HolidayManager.checkAndCacheHolidays();
+
+    const today = new Date();
+    const targetDate = HolidayManager.getLastTradingDay(today);
+
+    const formatDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const targetDateStr = formatDate(targetDate);
+
+    const isTodayTrading = HolidayManager.isTradingDay(today);
+    if (!isTodayTrading) {
+        // Just log, we still fetch best available data
+        log("FundAPI", `今天是 ${formatDate(today)} (非交易日/节假日)，目标数据日期: ${targetDateStr}`);
+    }
 
     const basicInfoPromise = fetchFundBasicInfo(fundCode);
 
+    // 2. Fetch Holdings
     // Reset global apidata for holdings fetch
     // @ts-ignore
     window.apidata = undefined;
     const holdingsUrl = `https://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code=${fundCode}&topline=10&year=&month=&rt=${Date.now()}`;
 
-    // Load holdings script
     let holdings: FundHolding[] = [];
     try {
         await loadScript(holdingsUrl);
@@ -119,16 +138,10 @@ async function _fetchFundInternal(fundCode: string): Promise<FundInfo | null> {
                     const cols = rows[i].querySelectorAll('td');
                     if (cols.length < 3) continue;
 
-                    // Eastmoney Format:
-                    // Col 1: Code (in <a>)
-                    // Col 2: Name (text)
-                    // Col 3+: Possible Ratio
-
                     const codeText = cols[1]?.textContent?.trim() || "";
                     const nameText = cols[2]?.textContent?.trim() || "";
 
                     // Ratio usually at index 6 or last. 
-                    // Let's iterate to find '%'
                     let ratioText = "";
                     for (let j = 3; j < cols.length; j++) {
                         if (cols[j].textContent?.includes('%')) {
@@ -142,7 +155,7 @@ async function _fetchFundInternal(fundCode: string): Promise<FundInfo | null> {
                         if (!isNaN(ratioVal)) {
                             holdings.push({
                                 code: codeText,
-                                name: nameText,
+                                name: nameText, // Assuming simple text name
                                 ratio: ratioVal / 100
                             });
                         }
@@ -156,16 +169,19 @@ async function _fetchFundInternal(fundCode: string): Promise<FundInfo | null> {
 
     const basicInfo = await basicInfoPromise;
 
-    // Fetch Stock Ratio from pingzhongdata
-    // This file defines 'var Data_fundSharesPositions = [...]'
-    // We are already inside a queue lock, so it's safe to use globals
+    // 3. Fetch Stock Ratio & PingZhong Data (NAV Correction)
     let stockRatio: number | undefined = undefined;
+
     try {
         // @ts-ignore
         window.Data_fundSharesPositions = undefined;
+        // @ts-ignore
+        window.Data_netWorthTrend = undefined;
+
         // Use https to avoid mixed content
         await loadScript(`https://fund.eastmoney.com/pingzhongdata/${fundCode}.js`);
 
+        // 3.1 Stock Ratio
         // @ts-ignore
         const positions = window.Data_fundSharesPositions;
         if (Array.isArray(positions) && positions.length > 0) {
@@ -175,8 +191,56 @@ async function _fetchFundInternal(fundCode: string): Promise<FundInfo | null> {
                 stockRatio = latest[1];
             }
         }
+
+        // 3.2 NAV Correction (The Fix)
+        // @ts-ignore
+        const trend = window.Data_netWorthTrend;
+        if (Array.isArray(trend) && trend.length > 0) {
+            const latestTrend = trend[trend.length - 1];
+            // Format: {x: timestamp, y: netValue, ...}
+            if (latestTrend && typeof latestTrend.y === 'number') {
+                const trendDate = new Date(latestTrend.x);
+                const trendDateStr = formatDate(trendDate);
+
+                // Compare with basicInfo date
+                // Priority:
+                // 1. If basicInfo (Realtime) date >= targetDate -> Use basicInfo (It is up to date).
+                // 2. Else if basicInfo date < targetDate:
+                //    - Check Trend (PingZhong).
+                //    - If Trend date > basicInfo date -> Use Trend.
+                //    - If Trend date == basicInfo date -> Use Trend (PingZhong is confirmed close, fundgz might be estimate? dwjz is usually confirmed though. But user said fundgz is old.)
+
+                const basicDateStr = basicInfo.date; // "2026-02-05"
+
+                if (basicDateStr) {
+                    if (basicDateStr < targetDateStr) {
+                        // Fundgz is stale (older than target logic)
+                        if (trendDateStr > basicDateStr) {
+                            // Trend is newer!
+                            if (basicInfo.dwjz !== latestTrend.y) {
+                                log("FundAPI", `纠正净值 (${fundCode}): ${basicInfo.dwjz} (${basicDateStr}) -> ${latestTrend.y} (${trendDateStr})`);
+                                basicInfo.dwjz = latestTrend.y;
+                            }
+                        } else if (trendDateStr === basicDateStr) {
+                            // Both are same date.
+                            // User experience: PingZhong (3.985) vs Fundgz (3.982). Date same?
+                            // In step 76 log: fundgz said "jzrq":"2026-02-05","dwjz":"3.9820".
+                            // In step 46 log: pingzhong said 2026/2/6 3.985.
+                            // So PingZhong date (02-06) > Fundgz date (02-05).
+                            // So the logic `trendDateStr > basicDateStr` will catch it.
+                        }
+                    } else {
+                        // basicInfo is up to date (>= target). 
+                        // Keep it.
+                    }
+                } else {
+                    // No date in basic info? Fallback to PingZhong if available.
+                    basicInfo.dwjz = latestTrend.y;
+                }
+            }
+        }
     } catch (e) {
-        console.warn("Failed to fetch stock ratio", e);
+        console.warn("Failed to fetch pingzhong data", e);
     }
 
     if (holdings.length === 0 && basicInfo.name.startsWith("基金")) {

@@ -6,7 +6,8 @@ import { CreateFund } from "@/components/CreateFund";
 import { MobileSettingsModal } from "@/components/MobileSettingsModal";
 import { MobileDetailModal } from "@/components/MobileDetailModal";
 import { MobileInfoModal } from "@/components/MobileInfoModal";
-import { Info, ArrowUp, ArrowDown } from "lucide-react";
+import { CalendarModal } from "@/components/CalendarModal";
+import { Info, ArrowUp, ArrowDown, Calendar } from "lucide-react";
 import { useState, useMemo } from "react";
 
 interface MobileHomeProps {
@@ -31,6 +32,7 @@ export function MobileHome({
     const [selectedFund, setSelectedFund] = useState<FundWithEstimate | null>(null);
     const [showSettings, setShowSettings] = useState(false);
     const [showInfo, setShowInfo] = useState(false);
+    const [showCalendar, setShowCalendar] = useState(false);
 
     // Sorting Logic
     type SortKey = 'time' | 'estimate';
@@ -106,6 +108,13 @@ export function MobileHome({
                                 sortConfig.dir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
                             )}
                         </button>
+                        <button
+                            onClick={() => setShowCalendar(true)}
+                            className="mobile-action-btn flex items-center gap-1"
+                        >
+                            <Calendar size={12} />
+                            日历
+                        </button>
                     </div>
 
                     {/* 添加基金 */}
@@ -149,6 +158,7 @@ export function MobileHome({
             {selectedFund && <MobileDetailModal fund={selectedFund} onClose={() => setSelectedFund(null)} />}
             {showSettings && <MobileSettingsModal onClose={() => setShowSettings(false)} />}
             {showInfo && <MobileInfoModal onClose={() => setShowInfo(false)} />}
+            {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} />}
         </>
     );
 }
