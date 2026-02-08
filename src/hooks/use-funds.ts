@@ -64,13 +64,19 @@ export function useFunds() {
 
     // Initial load
     useEffect(() => {
-        const loaded = StorageManager.getFunds();
-        const config = StorageManager.getConfig();
-        setFunds(loaded);
-        setRefreshInterval(config.refreshInterval);
+        const init = async () => {
+            // 首先检查假日数据（这是交易日判断的前提）
+            await HolidayManager.checkAndCacheHolidays();
 
-        // Auto-update check: if lastUpdate is not today, update it
-        checkDailyRefresh(loaded);
+            const loaded = StorageManager.getFunds();
+            const config = StorageManager.getConfig();
+            setFunds(loaded);
+            setRefreshInterval(config.refreshInterval);
+
+            // Auto-update check: if lastUpdate is not today, update it
+            checkDailyRefresh(loaded);
+        };
+        init();
     }, []);
 
     const isUpdatingAll = useRef(false);

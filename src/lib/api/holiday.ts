@@ -60,7 +60,7 @@ export class HolidayManager {
 
     private static async fetchAndCacheYear(year: number) {
         const url = `https://timor.tech/api/holiday/year/${year}`;
-        log("HolidayManager", `Fetching holidays for ${year}...`);
+        log("HolidayManager", `正在获取 ${year} 年假日数据...`);
 
         try {
             const res = await fetch(url);
@@ -95,15 +95,15 @@ export class HolidayManager {
                 saveCount++;
             }
 
-            logGroup("HolidayManager", `Cached holidays for ${year}`, [
-                `URL: ${url}`,
-                `Months Cached: ${saveCount}`,
-                `Sample Data (First 5):`,
+            logGroup("HolidayManager", `已缓存 ${year} 年假日数据`, [
+                `接口地址: ${url}`,
+                `已缓存月份数: ${saveCount}`,
+                `示例数据 (前5条):`,
                 Object.values(data.holiday).slice(0, 5)
             ]);
 
         } catch (e) {
-            log("HolidayManager", `Failed to fetch holidays for ${year}: ${e}`);
+            log("HolidayManager", `获取 ${year} 年假日数据失败: ${e}`);
         }
     }
 
