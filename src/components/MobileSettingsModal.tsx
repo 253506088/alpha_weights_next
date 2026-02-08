@@ -41,6 +41,25 @@ export function MobileSettingsModal({ onClose }: MobileSettingsModalProps) {
         }
     };
 
+    const handleClearAll = () => {
+        if (confirm("警告！确定要清空所有基金数据吗？\n\n此操作不可撤销！")) {
+            if (confirm("再次确认：清空后所有基金和历史数据都将丢失，确定继续吗？")) {
+                // 清空所有 localStorage 中的应用数据
+                const keysToRemove: string[] = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('alpha_weights_')) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+
+                alert("已清空所有数据，页面将刷新");
+                window.location.reload();
+            }
+        }
+    };
+
     return (
         <div className="mobile-modal-overlay" onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
@@ -102,6 +121,25 @@ export function MobileSettingsModal({ onClose }: MobileSettingsModalProps) {
                         >
                             导入并重启
                         </button>
+                    </div>
+
+                    <div className="mobile-divider"></div>
+
+                    {/* 危险操作 */}
+                    <div className="mobile-setting-group">
+                        <label style={{ color: '#ef4444' }}>危险操作</label>
+                        <button
+                            className="mobile-full-btn danger"
+                            onClick={handleClearAll}
+                            style={{
+                                background: 'rgba(239, 68, 68, 0.1)',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                color: '#ef4444'
+                            }}
+                        >
+                            清空所有数据
+                        </button>
+                        <p className="mobile-hint" style={{ color: '#ef4444' }}>此操作不可撤销，请谨慎！</p>
                     </div>
                 </div>
             </div>

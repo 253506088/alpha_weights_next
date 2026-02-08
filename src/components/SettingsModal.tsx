@@ -2,7 +2,7 @@
 
 import { useFunds } from "@/hooks/use-funds";
 import { StorageManager } from "@/lib/storage";
-import { X, Copy, Download, Upload } from "lucide-react";
+import { X, Copy, Download, Upload, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 interface SettingsModalProps {
@@ -35,6 +35,25 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                 window.location.reload();
             } else {
                 alert("导入失败，数据格式错误");
+            }
+        }
+    };
+
+    const handleClearAll = () => {
+        if (confirm("警告！确定要清空所有基金数据吗？\n\n此操作不可撤销！")) {
+            if (confirm("再次确认：清空后所有基金和历史数据都将丢失，确定继续吗？")) {
+                // 清空所有 localStorage 中的应用数据
+                const keysToRemove: string[] = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('alpha_weights_')) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+
+                alert("已清空所有数据，页面将刷新");
+                window.location.reload();
             }
         }
     };
@@ -176,6 +195,33 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                             <Upload className="w-4 h-4 inline-block mr-2" />
                             导入并重启
                         </button>
+                    </div>
+
+                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '20px 0' }}></div>
+
+                    {/* 危险操作 */}
+                    <div>
+                        <label style={{ display: 'block', color: '#ef4444', marginBottom: '10px', fontSize: '14px' }}>
+                            危险操作
+                        </label>
+                        <button
+                            onClick={handleClearAll}
+                            className="refresh-btn-legacy"
+                            style={{
+                                width: '100%',
+                                background: 'rgba(239, 68, 68, 0.1)',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                color: '#ef4444',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px'
+                            }}
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            清空所有数据
+                        </button>
+                        <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '8px', opacity: 0.7 }}>此操作不可撤销，请谨慎！</p>
                     </div>
                 </div>
             </div>
